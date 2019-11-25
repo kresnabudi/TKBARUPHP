@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 use Auth;
+use Config;
 use Validator;
 use Illuminate\Http\Request;
 
@@ -25,23 +26,23 @@ class TruckController extends Controller
 
     public function index()
     {
-        $trucklist = Truck::paginate(10);
+        $trucklist = Truck::paginate(Config::get('const.PAGINATION'));
         return view('truck.index', compact('trucklist'));
     }
 
     public function show($id)
     {
         $truck = Truck::find($id);
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
-        $truckTypeDDL = LookupRepo::findByCategory('TRUCKTYPE')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
+        $truckTypeDDL = LookupRepo::findByCategory('TRUCKTYPE')->pluck('i18nDescription', 'code');
 
         return view('truck.show', compact('statusDDL', 'truckTypeDDL'))->with('truck', $truck);
     }
 
     public function create()
     {
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
-        $truckTypeDDL = LookupRepo::findByCategory('TRUCKTYPE')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
+        $truckTypeDDL = LookupRepo::findByCategory('TRUCKTYPE')->pluck('i18nDescription', 'code');
 
         return view('truck.create', compact('statusDDL', 'truckTypeDDL'));
     }
@@ -53,30 +54,28 @@ class TruckController extends Controller
             'inspection_date' => 'required|string|max:255',
             'driver' => 'required|string|max:255',
             'status' => 'required',
+        ])->validate();
+        
+        Truck::create([
+            'store_id' => Auth::user()->store->id,
+            'type' => $data['truck_type'],
+            'plate_number' => $data['plate_number'],
+            'inspection_date' => date('Y-m-d', strtotime($data->input('inspection_date '))),
+            'driver' => $data['driver'],
+            'status' => $data['status'],
+            'remarks' => $data['remarks']
         ]);
-
-        if ($validator->fails()) {
-            return redirect(route('db.master.truck.create'))->withInput()->withErrors($validator);
-        } else {
-            Truck::create([
-                'store_id' => Auth::user()->store->id,
-                'type' => $data['truck_type'],
-                'plate_number' => $data['plate_number'],
-                'inspection_date' => date('Y-m-d', strtotime($data->input('inspection_date '))),
-                'driver' => $data['driver'],
-                'status' => $data['status'],
-                'remarks' => $data['remarks']
-            ]);
-            return redirect(route('db.master.truck'));
-        }
+        
+        return response()->json();
+            
     }
 
     public function edit($id)
     {
         $truck = Truck::find($id);
 
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
-        $truckTypeDDL = LookupRepo::findByCategory('TRUCKTYPE')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
+        $truckTypeDDL = LookupRepo::findByCategory('TRUCKTYPE')->pluck('i18nDescription', 'code');
 
         return view('truck.edit', compact('truck', 'statusDDL', 'truckTypeDDL'));
     }
@@ -88,14 +87,11 @@ class TruckController extends Controller
             'inspection_date' => 'required|string|max:255',
             'driver' => 'required|string|max:255',
             'status' => 'required',
-        ]);
+        ])->validate();
+        
+        Truck::find($id)->update($req->all());
 
-        if ($validator->fails()) {
-            return redirect(route('db.master.truck.edit'))->withInput()->withErrors($validator);
-        } else {
-            Truck::find($id)->update($req->all());
-            return redirect(route('db.master.truck'));
-        }
+        return response()->json();
     }
 
     public function delete($id)

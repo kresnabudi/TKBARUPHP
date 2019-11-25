@@ -51,6 +51,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Query\Builder|\App\Model\StockTransfer whereUpdatedAt($value)
  * @method static \Illuminate\Database\Query\Builder|\App\Model\StockTransfer whereDeletedAt($value)
  * @mixin \Eloquent
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\StockTransfer onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\StockTransfer withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\StockTransfer withoutTrashed()
+ * @property int $stock_id
+ * @property-read \App\Model\Stock $stock
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Model\StockTransfer whereStockId($value)
  */
 class StockTransfer extends Model
 {
@@ -63,15 +71,15 @@ class StockTransfer extends Model
     protected $table = 'stock_transfers';
 
     protected $fillable = [
+        'store_id',
+        'stock_id',
+        'product_id',
+        'source_warehouse_id',
+        'destination_warehouse_id',
+        'transfer_date',
         'quantity',
         'cost',
         'reason',
-        'store_id',
-        'po_id',
-        'product_id',
-        'transfer_date',
-        'source_warehouse_id',
-        'destination_warehouse_id'
     ];
 
     public function hId()
@@ -99,9 +107,9 @@ class StockTransfer extends Model
         return $this->belongsTo('App\Model\Warehouse', 'destination_warehouse_id');
     }
 
-    public function purchaseOrder()
+    public function stock()
     {
-        return $this->belongsTo('App\Model\PurchaseOrder', 'po_id');
+        return $this->belongsTo('App\Model\Stock', 'stock_id');
     }
 
     public static function boot()

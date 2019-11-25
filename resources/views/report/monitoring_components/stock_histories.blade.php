@@ -1,4 +1,15 @@
 <div class="row">
+    <div class="col-md-3">&nbsp;</div>
+    <div class="col-md-9">
+        <div class="text-right">
+            <a id="btnPreview" href="{{ route('db.report.monitoring.stocks.download') }}" class="btn btn-xs btn-default">@lang('buttons.print_preview_button')</a>
+            <a id="btnPreviewXLS" href="{{ route('db.report.monitoring.stocks.download') }}?f=xls" class="btn btn-xs btn-default">@lang('buttons.download_excel_button')</a>
+            <a id="btnPreviewPDF" href="{{ route('db.report.monitoring.stocks.download') }}?f=pdf" class="btn btn-xs btn-default">@lang('buttons.download_pdf_button')</a>
+        </div>
+    </div>
+</div>
+<br/>
+<div class="row">
     <div class="col-md-12">
         <div class="text-center" v-if="stock_histories.error" id="tab_mon_1_error_msg">
             <p><span>@lang('stock_history.error_data')</span><br/>
@@ -16,7 +27,7 @@
                         <td colspan="2" class="hiddenRow" style="padding-left: 15px; padding-top: 15px;">
                             <div class="accordian-body collapse" v-bind:id="'row'+prodtype.id ">
                                 <strong>@lang('stock_history.stock_history')</strong> <br/>
-                                <p v-if=" !prodtype.stocks.length ">@lang('stock_history.theres_no_data')</p>
+                                <p v-if="!prodtype.stocks.length ">@lang('stock_history.theres_no_data')</p>
                                 <template v-if=" prodtype.stocks.length " v-for="(stock, stockIndex) in prodtype.stocks">
                                     <table class="table table-striped">
                                         <thead>
@@ -44,8 +55,8 @@
                                                 <td colspan="8" class="hiddenRow" style="padding-left: 15px; padding-top: 15px;">
                                                     <div class="accordian-body collapse" v-bind:id="'rowstock'+ stock.id">
                                                         <strong>@lang('stock_history.sales_history')</strong> <br/>
-                                                        <p v-if=" !stock.so_items.length ">@lang('stock_history.theres_no_data')</p>
-                                                        <table v-if=" stock.so_items.length " class="table table-bordered">
+                                                        <p v-if="!stock.so_items.length">@lang('stock_history.theres_no_data')</p>
+                                                        <table v-if="stock.so_items.length" class="table table-bordered">
                                                             <thead>
                                                             <tr>
                                                                 <th class="text-center">@lang('stock_history.table.header.date')</th>

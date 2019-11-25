@@ -27,6 +27,7 @@ return [
             'box' => [
                 'receipt' => 'Receipt',
                 'items' => 'Items',
+                'expense' => 'Expenses',
             ],
             'field' => [
                 'warehouse' => 'Warehouse',
@@ -46,7 +47,25 @@ return [
                         'tare' => 'Tare',
                     ],
                 ],
+                'expense' => [
+                    'header' => [
+                        'name' => 'Name',
+                        'type' => 'Type',
+                        'internal_expense' => 'Internal',
+                        'remarks' => 'Remarks',
+                        'amount' => 'Amount',
+                    ],
+                ],
+                'total' => [
+                    'body' => [
+                        'total' => 'Total',
+                    ],
+                ],
             ],
+        ],
+        'field' => [
+            'warehouse' => 'Warehouse',
+            'po_code' => 'PO Code',
         ],
     ],
     'outflow' => [
@@ -76,6 +95,7 @@ return [
             'box' => [
                 'deliver' => 'Deliver',
                 'items' => 'Items',
+                'expenses' => 'Expenses',
             ],
             'field' => [
                 'warehouse' => 'Warehouse',
@@ -93,7 +113,25 @@ return [
                         'brutto' => 'Brutto',
                     ],
                 ],
+                'expense' => [
+                    'header' => [
+                        'name' => 'Name',
+                        'type' => 'Type',
+                        'internal_expense' => 'Internal',
+                        'remarks' => 'Remarks',
+                        'amount' => 'Amount',
+                    ],
+                ],
+                'total' => [
+                    'body' => [
+                        'total' => 'Total',
+                    ],
+                ],
             ],
+        ],
+        'field' => [
+            'warehouse' => 'Warehouse',
+            'so_code' => 'Sales Code',
         ],
     ],
     'create' => [
@@ -213,21 +251,34 @@ return [
             'page_title_desc' => '',
             'header' => [
                 'title' => [
-                    'warehouse' => 'Warehouse',
+                    'stock_location' => 'Stock Location',
+                    'transferred_to' => 'Transferred To',
                     'stocks' => 'Stocks',
+                    'in' => 'In',
+                    'stock_transfer' => 'Stock Transfer',
                 ],
             ],
             'table' => [
                 'header' => [
+                    'select' => 'Select',
                     'product' => 'Product',
                     'current_qty' => 'Current Quantity',
                     'detail' => 'Details',
+                    'remarks' => 'Remarks',
+                    'qty_to_transfer' => 'Qty. to Transfer',
+                    'destination' => 'Destination',
                 ],
             ],
         ],
         'field' => [
+            'product' => 'Product',
             'source_warehouse' => 'Source Warehouse',
             'destination_warehouse' => 'Destination Warehouse',
+            'transfer_date' => 'Transfer Date',
+            'remarks' => 'Remarks',
+            'quantity' => 'Quantity',
+            'newstock' => 'New Stock',
+            'existingstock' => 'Existing Stock',
         ],
         'index' => [
             'title' => 'Transfer Stocks',
@@ -245,6 +296,101 @@ return [
                     'quantity' => 'Quantity',
                 ],
             ],
+        ],
+        'show' => [
+            'title' => 'Transfer Stocks',
+            'page_title' => 'Transfer Stocks',
+            'page_title_desc' => '',
+            'header' => [
+                'title' => [
+                    'stock_location' => 'Stock Location',
+                    'transferred_to' => 'Transferred To',
+                    'stocks' => 'Stocks',
+                    'stock_transfer' => 'Stock Transfer',
+                ],
+            ],
+            'table' => [
+                'header' => [
+                    'select' => 'Select',
+                    'product' => 'Product',
+                    'current_qty' => 'Current Quantity',
+                    'detail' => 'Details',
+                    'remarks' => 'Remarks',
+                    'qty_to_transfer' => 'Qty. to Transfer',
+                    'destination' => 'Destination',
+                ],
+            ],
+        ],
+    ],
+    'stockmerger' => [
+        'create' => [
+            'title' => 'Create Stock Merger',
+            'page_title' => 'Create Stock Merger',
+            'page_title_desc' => '',
+            'header' => [
+                'title' => [
+                    'merger' => 'Merger Info',
+                    'stock_lists' => 'Stock Lists',
+                    'merger_remarks' => 'Remarks',
+                ],
+            ],
+            'table' => [
+                'stock' => [
+                    'header' => [
+                        'po_code' => 'Code',
+                        'po_date' => 'Date',
+                        'shipping_date' => 'Shipping Date',
+                        'current_quantity' => 'Current Quantity',
+                        'warehouse' => 'Warehouse',
+                    ],
+                ],
+            ],
+        ],
+        'index' => [
+            'title' => 'Stock Merger',
+            'page_title' => 'Stock Merger',
+            'page_title_desc' => '',
+            'header' => [
+                'title' => 'Stock Merger Lists',
+            ],
+            'table' => [
+                'header' => [
+                    'merge_date' => 'Date',
+                    'merge_type' => 'Type',
+                    'product' => 'Product',
+                    'remarks' => 'Remarks',
+                ],
+            ],
+        ],
+        'show' => [
+            'title' => 'Show Stock Merger',
+            'page_title' => 'Show Stock Merger',
+            'page_title_desc' => '',
+            'header' => [
+                'title' => [
+                    'merger' => 'Merger Info',
+                    'stock_lists' => 'Stock Lists',
+                    'merger_remarks' => 'Remarks',
+                ],
+            ],
+            'table' => [
+                'stock' => [
+                    'header' => [
+                        'po_code' => 'Code',
+                        'po_date' => 'Date',
+                        'shipping_date' => 'Shipping Date',
+                        'current_quantity' => 'Current Quantity',
+                        'warehouse' => 'Warehouse',
+                    ],
+                ],
+            ],
+        ],
+        'field' => [
+            'merger_date' => 'Date',
+            'merge_type' => 'Type',
+            'stock_lists' => 'Stock Lists',
+            'remarks' => 'Remarks',
+            'destination_warehouse' => 'Destination Warehouse',
         ],
     ],
 ];

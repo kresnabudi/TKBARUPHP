@@ -18,6 +18,7 @@ use App\Services\InflowService;
 
 use DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class InflowServiceImpl implements InflowService
@@ -32,7 +33,10 @@ class InflowServiceImpl implements InflowService
      */
     public function createPOReceipt(Request $request, $poId)
     {
-        DB::transaction(function() use ($request, $poId) {
+        Log::info("[InflowServiceImpl@createPOReceipt]");
+
+        DB::beginTransaction();
+        try {
             for ($i = 0; $i < sizeof($request->input('item_id')); $i++) {
                 $conversionValue = ProductUnit::where([
                     'product_id' => $request->input("product_id.$i"),
@@ -83,6 +87,9 @@ class InflowServiceImpl implements InflowService
             $po = PurchaseOrder::find($poId);
             $po->status = 'POSTATUS.WP';
             $po->save();
-        });
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+        }
     }
 }

@@ -13,6 +13,9 @@ use App\Model\PhoneProvider;
 use App\Repos\LookupRepo;
 
 use DB;
+use Lang;
+use Config;
+use Exception;
 use Validator;
 use Illuminate\Http\Request;
 
@@ -25,9 +28,7 @@ class PhoneProviderController extends Controller
 
     public function index()
     {
-        $p = PhonePrefix::get()->where('prefix', '=', '0812');
-        dd($p);
-        $phoneProvider = PhoneProvider::paginate(10);
+        $phoneProvider = PhoneProvider::paginate(Config::get('const.PAGINATION'));
         return view('phone_provider.index')->with('phoneProviderList', $phoneProvider);
     }
 
@@ -39,84 +40,89 @@ class PhoneProviderController extends Controller
 
     public function create()
     {
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         return view('phone_provider.create', compact('statusDDL'));
     }
 
     public function store(Request $data)
     {
-        $validator = Validator::make($data->all(), [
+        $this->validate($data, [
             'name' => 'required|string|max:255',
             'short_name' => 'required|string|max:255',
             'status' => 'required',
         ]);
 
-        if ($validator->fails()) {
-            return redirect(route('db.admin.phone_provider.create'))->withInput()->withErrors($validator);
-        } else {
-            DB::transaction(function() use ($data) {
-                $ph = new PhoneProvider();
-                $ph->name = $data['name'];
-                $ph->short_name = $data['short_name'];
-                $ph->status = $data['status'];
-                $ph->remarks = $data['remarks'];
+        DB::beginTransaction();
 
-                $ph->save();
+        try {
+            $ph = new PhoneProvider();
+            $ph->name = $data['name'];
+            $ph->short_name = $data['short_name'];
+            $ph->status = $data['status'];
+            $ph->remarks = $data['remarks'];
 
-                for ($i = 0; $i < count($data['prefixes']); $i++) {
-                    $pp = new PhonePrefix();
-                    $pp->prefix = $data['prefixes'][$i];
+            $ph->save();
 
-                    $ph->prefixes()->save($pp);
-                }
-            });
+            for ($i = 0; $i < count($data['prefixes']); $i++) {
+                $pp = new PhonePrefix();
+                $pp->prefix = $data['prefixes'][$i];
 
-            return redirect(route('db.admin.phone_provider'));
+                $ph->prefixes()->save($pp);
+            }
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
         }
+
+        return response()->json();
     }
 
     public function edit($id)
     {
         $phoneProvider = PhoneProvider::find($id);
 
+        $phonePrefix = PhonePrefix::wherePhoneProviderId($id)->get(); 
+
         $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
 
-        return view('phone_provider.edit', compact('phoneProvider', 'statusDDL'));
+
+        return view('phone_provider.edit', compact('phoneProvider', 'statusDDL', 'phonePrefix'));
     }
 
     public function update($id, Request $data)
     {
-        $validator = Validator::make($data->all(), [
+        $this->validate($data, [
             'name' => 'required|string|max:255',
             'short_name' => 'required|string|max:255',
             'status' => 'required',
         ]);
 
-        if ($validator->fails()) {
-            return redirect(route('db.admin.phone_provider.edit', $ph->hId()))->withInput()->withErrors($validator);
-        } else {
-            DB::transaction(function() use ($id, $data) {
-                $ph = PhoneProvider::find($id);
+        DB::beginTransaction();
 
-                $ph->name = $data['name'];
-                $ph->short_name = $data['short_name'];
-                $ph->status = $data['status'];
-                $ph->remarks = $data['remarks'];
-                $ph->save();
+        try {
+            $ph = PhoneProvider::find($id);
 
-                $ph->prefixes->each(function($pr) { $pr->delete(); });
+            $ph->name = $data['name'];
+            $ph->short_name = $data['short_name'];
+            $ph->status = $data['status'];
+            $ph->remarks = $data['remarks'];
+            $ph->save();
 
-                for ($i = 0; $i < count($data['prefixes']); $i++) {
-                    $pp = new PhonePrefix();
-                    $pp->prefix = $data['prefixes'][$i];
+            $ph->prefixes->each(function($pr) { $pr->delete(); });
 
-                    $ph->prefixes()->save($pp);
-                }
-            });
+            for ($i = 0; $i < count($data['prefixes']); $i++) {
+                $pp = new PhonePrefix();
+                $pp->prefix = $data['prefixes'][$i];
 
-            return redirect(route('db.admin.phone_provider'));
-        }
+                $ph->prefixes()->save($pp);
+            }
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+        };
+
+        return response()->json();
     }
 
     public function delete($id)
@@ -130,11 +136,13 @@ class PhoneProviderController extends Controller
 
     public function getPhoneProviderByDigit($digit)
     {
-        $p = PhonePrefix::get();
+        $p = PhoneProvider::with('prefixes')->whereHas('prefixes', function ($prefix) use ($digit) {
+             $prefix->where('phone_prefixes', '=', $digit);
+        })->first();
 
         return response()->json([
             'digit' => $digit,
-            'provider' => count($p) > 0 ? $p:''
+            'provider' => count($p) > 0 ? $p->name:''
         ], 200);
     }
 }

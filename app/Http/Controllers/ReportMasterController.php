@@ -14,12 +14,15 @@ use App\Model\TruckMaintenance;
 
 use App\Repos\LookupRepo;
 
+
+use Validator;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\PDF;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Lang;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportMasterController extends Controller
@@ -36,7 +39,7 @@ class ReportMasterController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         //Parameters
         $customerName = $request->input('name');
@@ -59,6 +62,12 @@ class ReportMasterController extends Controller
                 });
             })
             ->get();
+
+        if (count($customers) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
@@ -92,7 +101,7 @@ class ReportMasterController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         //Parameters
         $supplierName = $request->input('name');
@@ -115,6 +124,12 @@ class ReportMasterController extends Controller
                 });
             })
             ->get();
+
+        if (count($suppliers) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
@@ -148,7 +163,7 @@ class ReportMasterController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         //Parameters
         $productName = $request->input('name');
@@ -162,6 +177,12 @@ class ReportMasterController extends Controller
                 return $query->orWhere('short_code', 'like', "%$shortCode%");
             })
             ->get();
+
+        if (count($products) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
@@ -196,7 +217,7 @@ class ReportMasterController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         //Parameters
         $productTypeName = $request->input('name');
@@ -210,6 +231,12 @@ class ReportMasterController extends Controller
                 return $query->orWhere('short_code', 'like', "%$shortCode%");
             })
             ->get();
+
+        if (count($productTypes) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
@@ -243,7 +270,7 @@ class ReportMasterController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         //Parameters
         $bankName = $request->input('name');
@@ -264,6 +291,12 @@ class ReportMasterController extends Controller
                 return $query->where('branch_code', 'like', "%$branchCode%");
             })
             ->get();
+
+        if (count($banks) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
@@ -297,7 +330,7 @@ class ReportMasterController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         //Parameters
         $warehouseName = $request->input('name');
@@ -306,6 +339,12 @@ class ReportMasterController extends Controller
             ->when(!empty($warehouseName), function ($query) use ($warehouseName){
                 return $query->where('name', 'like', "%$warehouseName%");
             })->get();
+
+        if (count($warehouses) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
@@ -339,7 +378,7 @@ class ReportMasterController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         $truckTypeDDL = LookupRepo::findByCategory('TRUCKTYPE')->pluck('description', 'code');
 
         //Parameters
@@ -349,6 +388,12 @@ class ReportMasterController extends Controller
             ->when(!empty($plateNumber), function ($query) use ($plateNumber){
                 return $query->where('plate_number', 'like', "%$plateNumber%");
             })->get();
+
+        if (count($trucks) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
@@ -399,6 +444,12 @@ class ReportMasterController extends Controller
             $plateNumber = $truck->plate_number;
         }
 
+        if (count($truck) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
+
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
         }
@@ -431,7 +482,7 @@ class ReportMasterController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         //Parameters
         $vendorTruckingName = $request->input('name');
@@ -440,6 +491,12 @@ class ReportMasterController extends Controller
             ->when(!empty($vendorTruckingName), function ($query) use ($vendorTruckingName) {
                 return $query->where('name', 'like', "%$vendorTruckingName%");
             })->get();
+
+        if (count($vendorTruckings) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));

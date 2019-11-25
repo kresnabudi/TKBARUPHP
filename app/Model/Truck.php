@@ -48,6 +48,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Query\Builder|\App\Model\Truck whereUpdatedAt($value)
  * @method static \Illuminate\Database\Query\Builder|\App\Model\Truck whereDeletedAt($value)
  * @mixin \Eloquent
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Truck onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Truck withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Truck withoutTrashed()
+ * @property-read mixed $h_id
  */
 class Truck extends Model
 {
@@ -78,9 +84,18 @@ class Truck extends Model
         'deleted_at',
     ];
 
+    protected $appends = [
+        'hId'
+    ];
+
     public function hId()
     {
         return HashIds::encode($this->attributes['id']);
+    }
+
+    public function getHIdAttribute()
+    {
+        return $this->hId();
     }
 
     public function store()

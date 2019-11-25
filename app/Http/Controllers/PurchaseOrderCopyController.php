@@ -75,7 +75,7 @@ class PurchaseOrderCopyController extends Controller
 
         $poCopy = $this->purchaseOrderCopyService->createPOCopy($request, $poCode);
 
-        return redirect(route('db.po.copy.index', $poCode));
+        return response()->json();
     }
 
     public function edit($poCode, $id)
@@ -90,7 +90,7 @@ class PurchaseOrderCopyController extends Controller
     {
         $editedPOCopy = $this->purchaseOrderCopyService->editPOCopy($request, $id);
 
-        return redirect(route('db.po.copy.index', $poCode));
+        return response()->json();
     }
 
     public function delete($poCode, $id)

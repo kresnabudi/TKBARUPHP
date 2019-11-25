@@ -15,13 +15,13 @@ use App\Model\BankBCACSVRecord;
 use App\Repos\LookupRepo;
 
 use Auth;
+use Config;
 use Storage;
 use Validator;
 use Carbon\Carbon;
 use App\Http\Requests;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Config;
 
 class BankController extends Controller
 {
@@ -32,7 +32,7 @@ class BankController extends Controller
 
     public function index()
     {
-        $bank = Bank::paginate(10);
+        $bank = Bank::paginate(Config::get('const.PAGINATION'));
         return view('bank.index')->with('banks', $bank);
     }
 
@@ -44,7 +44,7 @@ class BankController extends Controller
 
     public function create()
     {
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         return view('bank.create', compact('statusDDL'));
     }
 
@@ -58,28 +58,24 @@ class BankController extends Controller
             'status' => 'required',
             'remarks' => 'required|string|max:255',
 
+        ])->validate();
+
+         Bank::create([
+            'store_id' => Auth::user()->store->id,
+            'name' => $data['name'],
+            'short_name' => $data['short_name'],
+            'branch' => $data['branch'],
+            'branch_code' => $data['branch_code'],
+            'status' => $data['status'],
+            'remarks' => $data['remarks']
         ]);
-
-        if ($validator->fails()) {
-            return redirect(route('db.master.bank.create'))->withInput()->withErrors($validator);
-        } else {
-
-            Bank::create([
-                'store_id' => Auth::user()->store->id,
-                'name' => $data['name'],
-                'short_name' => $data['short_name'],
-                'branch' => $data['branch'],
-                'branch_code' => $data['branch_code'],
-                'status' => $data['status'],
-                'remarks' => $data['remarks']
-            ]);
-            return redirect(route('db.master.bank'));
-        }
+        
+         return response()->json();
     }
 
     public function edit($id)
     {
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         $bank = Bank::find($id);
 
         return view('bank.edit', compact('bank', 'statusDDL'));
@@ -87,8 +83,19 @@ class BankController extends Controller
 
     public function update($id, Request $req)
     {
+        $validator = Validator::make($req->all(), [
+            'name' => 'required|string|max:255',
+            'short_name' => 'required|string|max:255',
+            'branch' => 'required|string|max:255',
+            'branch_code' => 'required|string|max:255',
+            'status' => 'required',
+            'remarks' => 'required|string|max:255',
+
+        ])->validate();
+
         Bank::find($id)->update($req->all());
-        return redirect(route('db.master.bank'));
+
+        return response()->json();
     }
 
     public function delete($id)

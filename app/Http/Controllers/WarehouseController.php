@@ -20,8 +20,12 @@ use App\Repos\LookupRepo;
 use App\Services\WarehouseService;
 
 use Auth;
-use Illuminate\Support\Facades\Log;
+use Config;
+use Hashids;
+use Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
 class WarehouseController extends Controller
 {
@@ -35,7 +39,7 @@ class WarehouseController extends Controller
 
     public function index()
     {
-        $warehouse = Warehouse::paginate(10);
+        $warehouse = Warehouse::paginate(Config::get('const.PAGINATION'));
         return view('warehouse.index', compact('warehouse'));
     }
 
@@ -48,7 +52,7 @@ class WarehouseController extends Controller
 
     public function create()
     {
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         $unitDDL = Unit::whereStatus('STATUS.ACTIVE')->get()->pluck('unit_name', 'id');
 
         return view('warehouse.create', compact('statusDDL', 'unitDDL'));
@@ -56,12 +60,17 @@ class WarehouseController extends Controller
 
     public function store(Request $data)
     {
-        $this->validate($data, [
+        $validator = $this->validate($data, [
             'name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'phone_num' => 'required|string|max:255',
             'status' => 'required',
         ]);
+
+        if (count($data['section_name']) == 0) {
+            $rules = ['section_name' => 'required'];
+            $messages = ['section_name.required' => LaravelLocalization::getCurrentLocale() == "en" ? "Please provide at least 1 Lot.":"Harap isi paling tidak 1 lot"];
+
+            Validator::make($data->all(), $rules, $messages)->validate();
+        }
 
         $warehouse = new Warehouse();
 
@@ -86,14 +95,14 @@ class WarehouseController extends Controller
             $warehouse->sections()->save($ws);
         }
 
-        return redirect(route('db.master.warehouse'));
+        return response()->json();
     }
 
     public function edit($id)
     {
         $warehouse = Warehouse::with('sections')->find($id);
 
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         $unitDDL = Unit::whereStatus('STATUS.ACTIVE')->get(['id', 'name', 'symbol']);
 
         return view('warehouse.edit', compact('warehouse', 'statusDDL', 'unitDDL'));
@@ -127,7 +136,7 @@ class WarehouseController extends Controller
 
         $warehouse->save();
 
-        return redirect(route('db.master.warehouse'));
+        return response()->json();
     }
 
     public function delete($id)
@@ -139,12 +148,25 @@ class WarehouseController extends Controller
         return redirect(route('db.master.warehouse'));
     }
 
-    public function stockopname()
+    public function stockopname(Request $req)
     {
         Log::info('[WarehouseController@stockopname]');
-        $stocks = Stock::paginate(10);
+        $stocks = [];
+        $wh = Warehouse::get();
+        $selectedWH = $req->query('w');
 
-        return view('warehouse.stockopname.index', compact('stocks'));
+        if (!empty($selectedWH)) {
+            $stocks = Stock::with('stockOpnames')
+                ->where('warehouse_id', Hashids::decode($selectedWH))
+                ->where('current_quantity', '>', 0)
+                ->paginate(Config::get('const.PAGINATION'));
+        } else {
+            $stocks = Stock::with('stockOpnames')
+                ->where('current_quantity', '>', 0)
+                ->paginate(Config::get('const.PAGINATION'));
+        }
+
+        return view('warehouse.stockopname.index', compact('stocks', 'wh', 'selectedWH'));
     }
 
 
@@ -163,6 +185,7 @@ class WarehouseController extends Controller
 
         $stockOpnameParam = [
             'stock_id'          => $stock->id,
+            'store_id'          => Auth::user()->store->id,
             'opname_date'       => date('Y-m-d H:i:s', strtotime($request->input('opname_date'))),
             'is_match'          => $request->has('is_match') ? true : false,
             'previous_quantity' => $stock->current_quantity,

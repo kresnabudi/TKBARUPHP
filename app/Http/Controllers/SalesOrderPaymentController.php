@@ -7,10 +7,12 @@ use App\Model\Bank;
 use App\Model\Store;
 use App\Model\Lookup;
 use App\Model\SalesOrder;
+use App\Model\Expense;
 
 use App\Repos\LookupRepo;
 
 use App\Services\PaymentService;
+use App\Services\SalesOrderService;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,10 +21,12 @@ use Illuminate\Support\Facades\Log;
 class SalesOrderPaymentController extends Controller
 {
     private $paymentService;
+    private $salesOrderService;
 
-    public function __construct(PaymentService $paymentService)
+    public function __construct(PaymentService $paymentService, SalesOrderService $salesOrderService)
     {
         $this->paymentService = $paymentService;
+        $this->salesOrderService = $salesOrderService;
         $this->middleware('auth');
     }
 
@@ -40,6 +44,10 @@ class SalesOrderPaymentController extends Controller
                             })->orWhere('walk_in_cust', 'like', '%'.$q.'%')->get();
         } else {
             $salesOrders = SalesOrder::with('customer')->where('status', '=', 'SOSTATUS.WP')->get();
+        }
+
+        if(!empty($request->query('socode'))){
+            $salesOrders = $salesOrders->where('code', '=', $request->query('socode'));
         }
 
         $soStatusDDL = LookupRepo::findByCategory('SOSTATUS')->pluck('description', 'code');
@@ -83,8 +91,10 @@ class SalesOrderPaymentController extends Controller
         $paymentAmount = floatval(str_replace(',', '', $request->input('total_amount')));
 
         $this->paymentService->createCashPayment($currentSo, $paymentDate, $paymentAmount);
-        
-        return redirect(route('db.so.payment.index'));
+
+        $this->salesOrderService->updateSOStatus($currentSo, $paymentAmount);
+
+        return response()->json();
     }
 
     public function createTransferPayment($id)
@@ -116,7 +126,7 @@ class SalesOrderPaymentController extends Controller
 
         $currentSo->payments()->save($payment);
 
-        return redirect(route('db.so.payment.index'));
+        return response()->json();
     }
 
     public function createGiroPayment($id)
@@ -160,24 +170,55 @@ class SalesOrderPaymentController extends Controller
 
         $currentSo->payments()->save($payment);
 
-        return redirect(route('db.so.payment.index'));
+        return response()->json();
     }
 
     public function createBroughtForwardPayment(Request $request, $id)
     {
-        Log::info('[SalesOrderPaymentController@createGiroPayment]');
+        Log::info('[SalesOrderPaymentController@createBroughtForwardPayment]');
 
-        $currentSo = SalesOrder::with('payments', 'items.product.productUnits.unit',
+        $currentSo = SalesOrder::with('payments', 'items.product', 'items.selectedUnit.unit',
             'customer.profiles.phoneNumbers.provider', 'customer.bankAccounts.bank',
             'vendorTrucking', 'warehouse', 'expenses')->find($id);
 
-        $nextSO = SalesOrder::where('id', '>', $currentSo->id)->get()->pluck('code', 'id');
+        $nextSo = SalesOrder::with('payments', 'items.product', 'items.selectedUnit.unit',
+            'customer.profiles.phoneNumbers.provider', 'customer.bankAccounts.bank',
+            'vendorTrucking', 'warehouse', 'expenses')->where('id', '>', $currentSo->id)->get();
 
-        return view('sales_order.payment.broughtforward_payment', compact('currentSo', 'nextSO'));
+        $paymentStatusDDL = Lookup::whereIn('category', ['CASHPAYMENTSTATUS', 'TRFPAYMENTSTATUS', 'GIROPAYMENTSTATUS'])
+            ->get()->pluck('description', 'code');
+
+        if($nextSo)
+            foreach($nextSo as $next)
+                $next->to_text();
+
+        return view('sales_order.payment.broughtforward_payment', compact('currentSo','nextSo', 'paymentStatusDDL'));
     }
 
     public function saveBroughtForwardPayment(Request $request, $id)
     {
+        Log::info('[SalesOrderPaymentController@saveBroughtForwardPayment]');
 
+        $currentSo = SalesOrder::find($id);
+
+        $this->validate($request, [
+            'next_code'     => 'required|string|max:255',
+            'next_name'     => 'required|string|max:255',
+            'next_remarks'  => 'required|string|max:255',
+        ]);
+
+        $nextSo = SalesOrder::find($request->input('next_code'));
+        $expense = new Expense();
+        $expense->name = $request->input("next_name");
+        $expense->type = 'EXPENSETYPE.ADD';
+        $expense->is_internal_expense = 1;
+        $expense->amount = $nextSo->totalAmount();
+        $expense->remarks = $request->input("next_remarks");
+        $nextSo->expenses()->save($expense);
+
+        $currentSo->status = 'SOSTATUS.C';
+        $currentSo->save();
+
+        return response()->json();
     }
 }

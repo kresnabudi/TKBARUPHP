@@ -10,11 +10,12 @@ namespace App\Model;
 
 use Auth;
 use Carbon\Carbon;
-use App\Traits\StoreFilter;
 use Illuminate\Support\Facades\DB;
 use Vinkla\Hashids\Facades\Hashids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
+use App\Traits\StoreFilter;
 
 /**
  * App\Model\Stock
@@ -53,6 +54,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Model\Item[] $soItems
  * @property-read mixed $clean_quantity
  * @property-read mixed $clean_current_quantity
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Model\StockOpname[] $stockOpnames
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Stock onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Stock withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Stock withoutTrashed()
+ * @property int $stock_merge_id
+ * @property-read mixed $is_merge
+ * @property-read \App\Model\StockMerge $stockMerge
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Model\Stock whereStockMergeId($value)
  */
 class Stock extends Model
 {
@@ -73,9 +84,18 @@ class Stock extends Model
         'warehouse_id'
     ];
 
+    protected $appends = [
+        'isMerge',
+    ];
+
     public function hId()
     {
         return HashIds::encode($this->attributes['id']);
+    }
+
+    public function getIsMergeAttribute()
+    {
+        return $this->attributes['stock_merge_id'] == 0 ? false:true;
     }
 
     public function product()
@@ -88,9 +108,19 @@ class Stock extends Model
         return $this->hasMany('App\Model\Price');
     }
 
+    public function stockOpnames()
+    {
+        return $this->hasMany('App\Model\StockOpname');
+    }
+
     public function warehouse()
     {
         return $this->belongsTo('App\Model\Warehouse', 'warehouse_id');
+    }
+
+    public function stockMerge()
+    {
+        return $this->belongsTo('App\Model\StockMerge', 'stock_merge_id');
     }
 
     public function purchaseOrder()
@@ -121,21 +151,42 @@ class Stock extends Model
         return is_numeric( $this->current_quantity ) && floor( $this->current_quantity ) != $this->current_quantity ? $this->current_quantity : number_format($this->current_quantity, 0) ;
     }
 
-    public function latestPrices()
+    public function latestPrices($priceLevelId = null)
     {
-        return Price::join(DB::raw("
-            (
-                SELECT MAX(input_date) AS input_date	
-                FROM prices 
-                WHERE stock_id = $this->id
-            ) max
-        "), function($join)
-        {
-            $join->on('prices.input_date', '=', 'max.input_date');
-        })
-        ->where('stock_id', '=', $this->id)
-        ->orderBy('price_level_id')
-        ->get();
+        if ($priceLevelId != null) {
+            $listLatestPrices =
+                Price::join(DB::raw("
+                (
+                    SELECT MAX(input_date) AS input_date	
+                    FROM prices 
+                    WHERE stock_id = $this->id
+                ) max
+            "), function($join)
+                {
+                    $join->on('prices.input_date', '=', 'max.input_date');
+                })
+                    ->where('stock_id', '=', $this->id)
+                    ->where('price_level_id', '=', $priceLevelId)
+                    ->orderBy('price_level_id')
+                    ->get();
+        } else {
+            $listLatestPrices =
+                Price::join(DB::raw("
+                (
+                    SELECT MAX(input_date) AS input_date	
+                    FROM prices 
+                    WHERE stock_id = $this->id
+                ) max
+            "), function($join)
+                {
+                    $join->on('prices.input_date', '=', 'max.input_date');
+                })
+                    ->where('stock_id', '=', $this->id)
+                    ->orderBy('price_level_id')
+                    ->get();
+        }
+
+        return $listLatestPrices;
     }
 
     public function todayPrices()

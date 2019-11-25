@@ -57,38 +57,38 @@ return [
         'page_title_desc' => '',
         'header' => [
             'title' => [
-                'upload' => '',
-                'history' => '',
+                'upload' => 'Bank Upload',
+                'history' => 'Riwayat Upload',
             ],
         ],
         'field' => [
-            'bank' => '',
-            'file' => '',
+            'bank' => 'Bank',
+            'file' => 'File',
         ],
         'table' => [
             'header' => [
-                'bank' => '',
-                'upload_date' => '',
-                'file_name' => '',
-                'status' => '',
+                'bank' => 'Bank',
+                'upload_date' => 'Tanggal Upload',
+                'file_name' => 'Nama File',
+                'status' => 'Status',
             ],
         ],
     ],
     'consolidate' => [
         'index' => [
-            'title' => '',
-            'page_title' => '',
+            'title' => 'Konsolidasi',
+            'page_title' => 'Konsolidasi',
             'page_title_desc' => '',
             'header' => [
-                'title' => '',
+                'title' => 'Konsolidasi',
             ],
             'table' => [
                 'header' => [
-                    'date' => '',
-                    'remarks' => '',
-                    'amount' => '',
-                    'db_cr' => '',
-                    'balance' => '',
+                    'date' => 'Tanggal',
+                    'remarks' => 'Keterangan',
+                    'amount' => 'Jumlah',
+                    'db_cr' => 'Debit/Kredit',
+                    'balance' => 'Balance',
                 ],
             ],
         ],

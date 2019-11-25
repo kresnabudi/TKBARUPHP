@@ -40,6 +40,15 @@ use Vinkla\Hashids\Facades\Hashids;
  * @mixin \Eloquent
  * @property int $stock_opname_id
  * @method static \Illuminate\Database\Query\Builder|\App\Model\StockIn whereStockOpnameId($value)
+ * @property int $stock_trf_id
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\StockIn whereStockTrfId($value)
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\StockIn onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\StockIn withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\StockIn withoutTrashed()
+ * @property int $stock_merge_id
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Model\StockIn whereStockMergeId($value)
  */
 class StockIn extends Model
 {
@@ -56,7 +65,9 @@ class StockIn extends Model
         'product_id',
         'warehouse_id',
         'stock_id',
-        'stock_opname_id'
+        'stock_merge_id',
+        'stock_opname_id',
+        'stock_trf_id',
     ];
 
     public function hId()

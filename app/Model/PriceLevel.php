@@ -48,6 +48,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Query\Builder|\App\Model\PriceLevel whereUpdatedAt($value)
  * @method static \Illuminate\Database\Query\Builder|\App\Model\PriceLevel whereDeletedAt($value)
  * @mixin \Eloquent
+ * @property-read mixed $i18n_type
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\PriceLevel onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\PriceLevel withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\PriceLevel withoutTrashed()
  */
 class PriceLevel extends Model
 {
@@ -78,6 +84,15 @@ class PriceLevel extends Model
         'deleted_by',
         'deleted_at',
     ];
+
+    protected $appends = [
+        'i18nType',
+    ];
+
+    public function getI18nTypeAttribute()
+    {
+        return trans('lookup.' . $this->attributes['type']);
+    }
 
     public function hId()
     {

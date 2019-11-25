@@ -24,9 +24,12 @@ use App\Model\ProductUnit;
 use App\Services\PaymentService;
 
 use DB;
+use Config;
+use Exception;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 use App\Services\SalesOrderService;
@@ -40,85 +43,107 @@ class SalesOrderServiceImpl implements SalesOrderService
     {
         $this->paymentService = $paymentService;
     }
-    
+
     /**
      * Save(create) a newly sales order. The saved(created) sales order will be returned.
      * Multiple sales orders can be created at once and all of them will be saved to user session as an array by default.
      * This method will only save the sales order at sales order array in user session with given index and will remove it from that array.
      *
-     * @param Request $request request which contains values from create form to create the sales order.
-     * @param int $index index of sales order in sales order array in user session to be saved.
-     * @return SalesOrder
+     * @param Array $soData object which contains values from create form to create the sales order.
+     * @return void
      */
-    public function createSO(Request $request, $index)
+    public function createSO(Array $soData)
     {
-        DB::transaction(function() use ($request, $index) {
-            if ($request->input("customer_type.$index") == 'CUSTOMERTYPE.R') {
-                $customer_id = empty($request->input("customer_id.$index")) ? 0 : $request->input("customer_id.$index");
+        Log::info("[SalesOrderServiceImpl@createSO]");
+
+        DB::beginTransaction();
+        try {
+            if ($soData['customer_type']['code'] == 'CUSTOMERTYPE.R') {
+                $customer_id = empty($soData['customer']['id']) ? 0 : $soData['customer']['id'];
                 $walk_in_cust = '';
                 $walk_in_cust_detail = '';
             } else {
                 $customer_id = 0;
-                $walk_in_cust = $request->input("walk_in_customer.$index");
-                $walk_in_cust_detail = $request->input("walk_in_customer_details.$index");
+                $walk_in_cust = $soData['walk_in_cust'];
+                $walk_in_cust_detail = $soData['walk_in_cust_details'];
             }
 
-            $params = [
-                'customer_type' => $request->input("customer_type.$index"),
+            $so = [
+                'customer_type' => $soData['customer_type']['code'],
                 'customer_id' => $customer_id,
                 'walk_in_cust' => $walk_in_cust,
                 'walk_in_cust_detail' => $walk_in_cust_detail,
-                'code' => $request->input("so_code.$index"),
-                'so_type' => $request->input("sales_type.$index"),
-                'so_created' => date('Y-m-d H:i:s', strtotime($request->input("so_created.$index"))),
-                'shipping_date' => date('Y-m-d H:i:s', strtotime($request->input("shipping_date.$index"))),
+                'code' => $soData['so_code'],
+                'so_type' => $soData['sales_type']['code'],
+                'so_created' => date('Y-m-d H:i:s', strtotime($soData['so_created'])),
+                'shipping_date' => date('Y-m-d H:i:s', strtotime($soData['shipping_date'])),
                 'status' => Lookup::whereCode('SOSTATUS.WD')->first()->code,
-                'vendor_trucking_id' => empty($request->input("vendor_trucking_id.$index")) ? 0 : $request->input("vendor_trucking_id.$index"),
-                'warehouse_id' => $request->input("warehouse_id.$index"),
-                'remarks' => $request->input("remarks.$index"),
-                'store_id' => Auth::user()->store_id
+                'vendor_trucking_id' => empty($soData['vendorTrucking']['id']) ? 0 : $soData['vendorTrucking']['id'],
+                'warehouse_id' => $soData['warehouse']['id'],
+                'remarks' => $soData['remarks'],
+                'internal_remarks' => $soData['internal_remarks'],
+                'private_remarks' => $soData['private_remarks'],
+                'store_id' => Auth::user()->store_id,
+                'disc_percent' => $soData['disc_percent'],
+                'disc_value' => $soData['disc_value']
             ];
 
-            $so = SalesOrder::create($params);
+            $so = SalesOrder::create($so);
 
-            for ($j = 0; $j < count($request->input("so_$index" . "_product_id")); $j++) {
+            foreach ($soData['items'] as $i) {
+                $stock = Stock::find($i['stock_id']);
+                $customer = Customer::find($customer_id);
+                if (!empty($i['stock_id'])) {
+                    $validator = validator(
+                        [ 'quantity' => $i['quantity'] ],
+                        [ 'quantity' => 'required|numeric|min:1|max:'.$stock->current_quantity ]
+                    );
+                    if ($validator->fails()) {
+                        throw new \Exception($validator->errors()->first());
+                    }
+                    if ($customer && !in_array(auth()->user()->userDetail->type, [ 'USERTYPE.O', 'USERTYPE.A' ])) {
+                        $latest_price = $stock->latestPrices()->first(function ($value, $key) use ($customer) {
+                            return $value->price_level_id === $customer->price_level_id;
+                        });
+                        $validator = validator(
+                            [ 'price' => $i['price'] ],
+                            [ 'price' => 'required|numeric|min:'.($latest_price ? $latest_price->market_price : 0) ]
+                        );
+                        if ($validator->fails()) {
+                            throw new \Exception($validator->errors()->first());
+                        }
+                    }
+                }
                 $item = new Item();
-                $item->product_id = $request->input("so_$index" . "_product_id.$j");
-                $item->stock_id = empty($request->input("so_$index" . "_stock_id.$j")) ? 0 : $request->input("so_$index" . "_stock_id.$j");
+                $item->product_id = $i['product']['id'];
+                $item->stock_id = empty($i['stock_id']) ? 0 : $i['stock_id'];
                 $item->store_id = Auth::user()->store_id;
-                $item->selected_unit_id = $request->input("so_$index" . "_selected_unit_id.$j");
-                $item->base_unit_id = $request->input("so_$index" . "_base_unit_id.$j");
-                $item->conversion_value = ProductUnit::where([
-                    'product_id' => $item->product_id,
-                    'unit_id' => $item->selected_unit_id
-                ])->first()->conversion_value;
-                $item->quantity = $request->input("so_$index" . "_quantity.$j");
-                $item->price = floatval(str_replace(',', '', $request->input("so_$index" . "_price.$j")));
+                $item->selected_unit_id = $i['selected_unit']['id'];
+                $item->base_unit_id = $i['base_unit']['id'];
+                $item->conversion_value = ProductUnit::whereId($item->selected_unit_id)->first()->conversion_value;
+                $item->quantity = $i['quantity'];
+                $item->price = floatval(str_replace(',', '', $i['price']));
                 $item->to_base_quantity = $item->quantity * $item->conversion_value;
 
                 $so->items()->save($item);
             }
 
-            for ($j = 0; $j < count($request->input("so_$index" . "_expense_name")); $j++) {
+            foreach ($soData['expenses'] as $expense) {
                 $expense = new Expense();
-                $expense->name = $request->input("so_$index" . "_expense_name.$j");
-                $expense->type = $request->input("so_$index" . "_expense_type.$j");
-                $expense->is_internal_expense = !empty($request->input("so_$index" . "_is_internal_expense.$j"));
-                $expense->amount = floatval(str_replace(',', '', $request->input("so_$index" . "_expense_amount.$j")));
-                $expense->remarks = $request->input("so_$index" . "_expense_remarks.$j");
+                $expense->name = $expense['name'];
+                $expense->type = $expense['type']['code'];
+                $expense->is_internal_expense = !empty($expense['is_internal_expense']) ? $expense['is_internal_expense'] : 0;
+                $expense->amount = floatval(str_replace(',', '', $expense['amount']));
+                $expense->remarks = $expense['remarks'];
                 $so->expenses()->save($expense);
             }
 
-            // If auto cash, create cash payment immediately.
             if($so->so_type === 'SOTYPE.AC'){
                 $items = $so->items;
 
                 //Create delivers
                 for($i = 0; $i < sizeof($items); $i++){
-                    $conversionValue = ProductUnit::where([
-                        'product_id' => $items[$i]->product_id,
-                        'unit_id' => $items[$i]->selected_unit_id
-                    ])->first()->conversion_value;
+                    $conversionValue = ProductUnit::whereId($items[$i]->selected_unit_id)->first()->conversion_value;
 
                     $deliverParams = [
                         'deliver_date' => $so->so_created,
@@ -156,16 +181,19 @@ class SalesOrderServiceImpl implements SalesOrderService
                         $stock->save();
                     }
                 }
-                
+
                 $this->paymentService->createCashPayment($so, $so->so_created, $so->totalAmount());
+
+                $so->status = "SOSTATUS.C";
+                $so->save();
             }
 
-            $userSOs = session('userSOs');
-            $userSOs->splice($index, 1);
-            session(['userSOs' => $userSOs]);
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
 
-            return $so;
-        });
+            throw $e;
+        }
     }
 
     /**
@@ -179,9 +207,11 @@ class SalesOrderServiceImpl implements SalesOrderService
      */
     public function cancelSO($index)
     {
-        $userSOs = session('userSOs');
+        Log::info("[SalesOrderServiceImpl@cancelSO]");
+
+        $userSOs = session(Config::get('const.SESSION.USER_SO_LIST'));
         $userSOs->splice($index, 1);
-        session(['userSOs' => $userSOs]);
+        session([Config::get('const.SESSION.USER_SO_LIST') => $userSOs]);
     }
 
     /**
@@ -192,6 +222,8 @@ class SalesOrderServiceImpl implements SalesOrderService
      */
     public function getSOForRevise($id)
     {
+        Log::info("[SalesOrderServiceImpl@getSOForRevise]");
+
         return SalesOrder::with('items.product.productUnits.unit', 'customer.profiles.phoneNumbers.provider',
             'customer.bankAccounts.bank', 'vendorTrucking', 'warehouse', 'expenses')->find($id);
     }
@@ -207,6 +239,8 @@ class SalesOrderServiceImpl implements SalesOrderService
      */
     public function reviseSO(Request $request, $id)
     {
+        Log::info("[SalesOrderServiceImpl@reviseSO]");
+
         DB::transaction(function() use ($id, $request) {
             // Get current SO
             $currentSo = SalesOrder::with('items')->find($id);
@@ -234,10 +268,7 @@ class SalesOrderServiceImpl implements SalesOrderService
                 $item->store_id = Auth::user()->store_id;
                 $item->selected_unit_id = $request->input("selected_unit_id.$i");
                 $item->base_unit_id = $request->input("base_unit_id.$i");
-                $item->conversion_value = ProductUnit::where([
-                    'product_id' => $item->product_id,
-                    'unit_id' => $item->selected_unit_id
-                ])->first()->conversion_value;
+                $item->conversion_value = ProductUnit::whereId($item->selected_unit_id)->first()->conversion_value;
                 $item->quantity = $request->input("quantity.$i");
                 $item->price = floatval(str_replace(',', '', $request->input("price.$i")));
                 $item->to_base_quantity = $item->quantity * $item->conversion_value;
@@ -284,6 +315,8 @@ class SalesOrderServiceImpl implements SalesOrderService
      */
     public function rejectSO(Request $request, $id)
     {
+        Log::info("[SalesOrderServiceImpl@rejectSO]");
+
         $so = SalesOrder::find($id);
         $so->status = 'SOSTATUS.RJT';
         $so->save();
@@ -294,7 +327,10 @@ class SalesOrderServiceImpl implements SalesOrderService
      * @param Request $request request which contains values for sales orders
      * @return void
      */
-    public function storeToSession(Request $request){
+    public function storeToSession(Request $request)
+    {
+        Log::info("[SalesOrderServiceImpl@storeToSession]");
+
         $SOs = [];
 
         for($i = 0; $i < count($request->input('so_code')); $i++){
@@ -368,7 +404,7 @@ class SalesOrderServiceImpl implements SalesOrderService
             ];
         }
 
-        session(['userSOs' => collect($SOs)]);
+        return $SOs;
     }
 
     /**
@@ -379,6 +415,8 @@ class SalesOrderServiceImpl implements SalesOrderService
      */
     public function getSOForCopy($soCode)
     {
+        Log::info("[SalesOrderServiceImpl@getSOForCopy]");
+
         return SalesOrder::with('items.product.productUnits.unit', 'customer.profiles.phoneNumbers.provider',
             'customer.bankAccounts.bank', 'vendorTrucking', 'warehouse')->where('code', '=', $soCode)->first();
     }
@@ -391,11 +429,13 @@ class SalesOrderServiceImpl implements SalesOrderService
      */
     public function getDueSO($daysToDue = 1)
     {
+        Log::info("[SalesOrderServiceImpl@getDueSO]");
+
         $soWaitingForPayment = SalesOrder::with('delivers', 'customer')
-        ->where('status', '=', 'SOSTATUS.WP')
-        ->whereHas('customer', function($query){
-            $query->where('payment_due_day', '>', 0);
-        })->get();
+            ->where('status', '=', 'SOSTATUS.WP')
+            ->whereHas('customer', function($query){
+                $query->where('payment_due_day', '>', 0);
+            })->get();
 
         $today = Carbon::today();
 
@@ -415,7 +455,9 @@ class SalesOrderServiceImpl implements SalesOrderService
      */
     public function getSOInOneDay($date)
     {
-       //Defensive copy, because still don't know immutability' 
+        Log::info("[SalesOrderServiceImpl@getSOInOneDay]");
+
+       //Defensive copy, because still don't know immutability'
        $dateCopy = $date->copy();
 
        $startOfDay = $dateCopy->startOfDay()->toDateTimeString();
@@ -426,23 +468,25 @@ class SalesOrderServiceImpl implements SalesOrderService
 
     /**
      * Get total amount of all sales created on given date
-     * 
+     *
      * @param Carbon $date target date
      * @return float
      */
     public function getSOTotalAmountInOneDay($date)
     {
-       $soInGivenDate = $this->getSOInOneDay($date);
+        Log::info("[SalesOrderServiceImpl@getSOInOneDay]");
 
-       $soTotalAmount = $soInGivenDate->sum(function($so){
-           return $so->itemTotalAmount();
-       });
+        $soInGivenDate = $this->getSOInOneDay($date);
 
-       return $soTotalAmount;
+        $soTotalAmount = $soInGivenDate->sum(function($so){
+            return $so->itemTotalAmount();
+        });
+
+        return $soTotalAmount;
     }
 
     /**
-     * Get all sales orders that have not been delivered in more than 
+     * Get all sales orders that have not been delivered in more than
      * given threshold days since its shipping date.
      *
      * @param int $threshold threshold in day
@@ -450,19 +494,31 @@ class SalesOrderServiceImpl implements SalesOrderService
      */
     public function getUndeliveredSO($threshold = 3)
     {
-        return SalesOrder::where('status', '=', 'SOSTATUS.WD')
-        ->where('shipping_date', '<', Carbon::today()->addDays(-$threshold))
-        ->doesntHave('delivers')->get();
+        Log::info("[SalesOrderServiceImpl@getUndeliveredSO]");
+
+        $salesOrders = SalesOrder::with('customer')
+            ->where('status', '=', 'SOSTATUS.WD')
+            ->where('shipping_date', '<', Carbon::today()->addDays(-$threshold))
+            ->doesntHave('delivers')->get();
+
+        foreach($salesOrders AS $salesOrder)
+        {
+            $salesOrder->totalAmount = $salesOrder->totalAmount();
+        }
+
+        return $salesOrders;
     }
 
     /**
      * Get all created sales order from given date.
-     * 
+     *
      * @param Carbon
      * @return Collection
      */
     public function getCreatedSOFromDate($date)
     {
+        Log::info("[SalesOrderServiceImpl@getCreatedSOFromDate]");
+
         $startDate = $date->copy()->startOfDay();
 
         return SalesOrder::where('so_created', '>=', $startDate)->get();
@@ -475,6 +531,84 @@ class SalesOrderServiceImpl implements SalesOrderService
      */
     public function getUncorfirmedSO()
     {
+        Log::info("[SalesOrderServiceImpl@getUncorfirmedSO]");
+
         return SalesOrder::where('status', '=', 'SOSTATUS.WCC')->get();
+    }
+
+    public function searchSO($keyword)
+    {
+        Log::info("[SalesOrderServiceImpl@getUncorfirmedSO]");
+
+        $salesOrders = SalesOrder::with('customer.profiles')
+            ->where('code', 'like', '%'.$keyword.'%')
+            ->orWhere('walk_in_cust', 'like', '%'.$keyword.'%')
+            ->orWhereHas('customer.profiles', function($query) use ($keyword) {
+                $query->where('first_name', 'like', '%'.$keyword.'%')
+                    ->where('last_name', 'like', '%'.$keyword.'%');
+            });
+
+        return $salesOrders;
+    }
+
+    public function searchSOByDate($date)
+    {
+        $date = Carbon::parse($date)->format('Y-m-d');
+        
+        $saleOrders = SalesOrder::with([ 'customer.profiles', 'delivers.item.product',
+            'delivers.item.selectedUnit' => function($q) { $q->with('unit')->withTrashed(); }
+        ])
+            ->where('so_created', 'like', '%'.$date.'%')->get();
+
+        return $saleOrders;
+    }
+
+    public function updateSOStatus(SalesOrder $soData, $amount)
+    {
+        Log::info("[SalesOrderServiceImpl@updateSOStatus]");
+
+        if ($soData->totalAmountUnpaid() == 0) {
+            $soData->status = 'SOSTATUS.C';
+
+            $soData->save();
+        }
+    }
+
+    public function getTop10Customer()
+    {
+        Log::info("[SalesOrderServiceImpl@getTop10Customer]");
+
+
+    }
+
+    public function getTop10WalkInCustomer()
+    {
+        Log::info("[SalesOrderServiceImpl@getTop10WalkInCustomer]");
+    }
+
+    public function getSOByCode($code)
+    {
+        $saleOrders = SalesOrder::with([ 'customer.profiles' ])
+            ->where('code', '=', $code)->get();
+
+        return $saleOrders;
+    }
+
+    public function addExpense($id, $expenseArr)
+    {
+        $currentSo = SalesOrder::whereId($id)->first();
+
+        for($i = 0; $i < count($expenseArr); $i++){
+            $expense = new Expense();
+            $expense->name = $expenseArr[$i]["expense_name"];
+            $expense->type = $expenseArr[$i]["expense_type"];
+            $expense->is_internal_expense = !empty($expenseArr[$i]["is_internal_expense"]);
+            $expense->amount = floatval(str_replace(',', '', $expenseArr[$i]["expense_amount"]));
+            $expense->remarks = $expenseArr[$i]["expense_remarks"];
+
+            $currentSo->expenses()->save($expense);
+        }
+
+        $currentSo->save();
     }
 }

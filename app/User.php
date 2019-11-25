@@ -4,8 +4,8 @@ namespace App;
 
 use Vinkla\Hashids\Facades\Hashids;
 use Illuminate\Notifications\Notifiable;
-use Zizaco\Entrust\Traits\EntrustUserTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laratrust\Traits\LaratrustUserTrait;
 
 /**
  * App\User
@@ -43,10 +43,17 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Model\EventCalendar[] $eventCalendars
  * @property string $api_token
  * @method static \Illuminate\Database\Query\Builder|\App\User whereApiToken($value)
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Model\Permission[] $permissions
+ * @method static \Illuminate\Database\Query\Builder|\App\User whereRoleIs($role = '')
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\User wherePermissionIs($permission = '')
+ * @property int $active
+ * @property string|null $activation_token
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\User whereActivationToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\User whereActive($value)
  */
 class User extends Authenticatable
 {
-    use EntrustUserTrait;
+    use LaratrustUserTrait;
 
     use Notifiable;
 
@@ -56,7 +63,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password', 'api_token'
+        'name', 'email', 'password', 'api_token', 'activation_token', 'created_at', 'updated_at'
     ];
 
     /**
@@ -82,10 +89,6 @@ class User extends Authenticatable
 
     public function store() {
         return $this->belongsTo('App\Model\Store', 'store_id');
-    }
-
-    public function roles() {
-        return $this->belongsToMany('App\Model\Role', 'role_user', 'user_id', 'role_id');
     }
 
     public function settings() {

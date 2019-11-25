@@ -12,16 +12,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        $adminUser = $this->command->ask('Enter Super Admin User Name: ', 'GitzJoey');
-        do {
-            $adminPassword = $this->command->secret('Enter Password: ', true);
-            $adminPasswordConfirm = $this->command->secret('Confirm Password: ', true);
-        } while (strcmp($adminPassword, $adminPasswordConfirm) != 0);
-        $defaultStore = $this->command->ask('Enter Default Store: ', 'Toko Baru');
-
-        $this->call(DefaultStoreTableSeeder::class, $defaultStore);
-
-        // $this->call(UsersTableSeeder::class);
         $this->call(PermissionTableSeeder::class);
         $this->call(RolesTableSeeder::class);
         $this->call(DefaultListUnitTableSeeder::class);
@@ -31,6 +21,9 @@ class DatabaseSeeder extends Seeder
 
         /* DUMMY DATA */
         if (App::environment('local', 'dev')) {
+
+            $this->command->info('Local/Development Enviroment Detected. Starting Dummy Data Seeder...');
+
             $this->call(BankTableSeeder::class);
             $this->call(ProductTableSeeder::class);
             $this->call(ProductTypeTableSeeder::class);

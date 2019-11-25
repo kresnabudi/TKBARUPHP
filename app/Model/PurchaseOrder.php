@@ -73,6 +73,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property float $disc_value
  * @method static \Illuminate\Database\Query\Builder|\App\Model\PurchaseOrder whereDiscPercent($value)
  * @method static \Illuminate\Database\Query\Builder|\App\Model\PurchaseOrder whereDiscValue($value)
+ * @property string $internal_remarks
+ * @property string $private_remarks
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\PurchaseOrder whereInternalRemarks($value)
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\PurchaseOrder wherePrivateRemarks($value)
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\PurchaseOrder onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\PurchaseOrder withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\PurchaseOrder withoutTrashed()
+ * @property-read mixed $h_id
  */
 class PurchaseOrder extends Model
 {
@@ -93,6 +103,8 @@ class PurchaseOrder extends Model
         'walk_in_supplier',
         'walk_in_supplier_detail',
         'remarks',
+        'internal_remarks',
+        'private_remarks',
         'status',
         'supplier_id',
         'vendor_trucking_id',
@@ -111,9 +123,18 @@ class PurchaseOrder extends Model
         'deleted_at',
     ];
 
+    protected $appends = [
+        'hId'
+    ];
+
     public function hId()
     {
         return HashIds::encode($this->attributes['id']);
+    }
+
+    public function getHIdAttribute()
+    {
+        return $this->hId();
     }
 
     public function items()
@@ -204,14 +225,6 @@ class PurchaseOrder extends Model
             && $payment->status !== 'GIROPAYMENTSTATUS.WE'
             && $payment->status !== 'PAYMENTTYPE.FR';
         })->sum('total_amount');
-    }
-
-    public function updatePaymentStatus()
-    {
-        if($this->totalAmount() === $this->totalAmountPaid())
-            $this->status = "POSTATUS.C";
-
-        $this->save();
     }
 
     public function expenses()

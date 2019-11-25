@@ -132,11 +132,25 @@ return [
                 'payment_amount' => 'Payment Amount',
             ],
         ],
+        'broughtforward' => [
+            'title' => 'Forward Invoice',
+            'page_title' => 'Forward Invoice',
+            'page_title_desc' => '',
+            'header' => [
+                'title' => 'Forward Invoice',
+            ],
+            'invoice' => [
+                'next' => 'Merge Invoice',
+                'so_code' => 'Sales Code',
+                'name' => 'Name',
+                'remarks' => 'Remarks',
+            ],
+        ],
     ],
     'copy' => [
         'create' => [
-            'title' => 'Create SO Copy',
-            'page_title' => 'Create SO Copy',
+            'title' => 'Create Sales Copy',
+            'page_title' => 'Create Sales Copy',
             'page_title_desc' => 'Create a new copy of sales order',
             'box' => [
                 'customer' => 'Customer',
@@ -144,20 +158,20 @@ return [
                 'shipping' => 'Shipping',
                 'transactions' => 'Transactions',
                 'remarks' => 'Remarks',
-                'so_copy_remarks' => 'SO Copy Remarks',
+                'so_copy_remarks' => 'Sales Copy Remarks',
             ],
             'field' => [
                 'customer_type' => 'Type',
                 'customer_name' => 'Name',
                 'customer_details' => 'Details',
-                'so_code' => 'SO Code',
-                'so_copy_code' => 'SO Copy Code',
+                'so_code' => 'Ssles Code',
+                'so_copy_code' => 'Sales Copy Code',
                 'so_type' => 'Type',
                 'so_date' => 'Date',
                 'shipping_date' => 'Shipping Date',
                 'warehouse' => 'Warehouse',
                 'vendor_trucking' => 'Vendor Trucking',
-                'so_status' => '',
+                'so_status' => 'Status',
             ],
             'table' => [
                 'item' => [
@@ -177,8 +191,8 @@ return [
             ],
         ],
         'edit' => [
-            'title' => 'Edit SO Copy',
-            'page_title' => 'Edit SO Copy',
+            'title' => 'Edit Ssles Copy',
+            'page_title' => 'Edit Sales Copy',
             'page_title_desc' => 'Edit a copy of sales order',
             'box' => [
                 'customer' => 'Customer',
@@ -186,14 +200,14 @@ return [
                 'shipping' => 'Shipping',
                 'transactions' => 'Transactions',
                 'remarks' => 'Remarks',
-                'so_copy_remarks' => 'SO Copy Remarks',
+                'so_copy_remarks' => 'Sales Copy Remarks',
             ],
             'field' => [
                 'customer_type' => 'Type',
                 'customer_name' => 'Name',
                 'customer_details' => 'Details',
-                'so_code' => 'SO Code',
-                'so_copy_code' => 'SO Copy Code',
+                'so_code' => 'Sales Code',
+                'so_copy_code' => 'Sales Copy Code',
                 'so_type' => 'Type',
                 'so_date' => 'Date',
                 'shipping_date' => 'Shipping Date',
@@ -247,6 +261,9 @@ return [
     'create' => [
         'box' => [
             'transaction_summary' => 'Transaction Summary',
+            'last_sale' => 'Last Sale',
+            'open_sales' => 'Open Sales',
+            'latest_prices' => 'Latest Prices',
             'customer' => 'Customer',
             'sales_order_detail' => 'Sales Order Detail',
             'shipping' => 'Shipping',
@@ -255,8 +272,8 @@ return [
             'remarks' => 'Remarks',
             'total_discount' => 'Discount',
         ],
-        'title' => 'Create SO Copy',
-        'page_title' => 'Create SO Copy',
+        'title' => 'Create Sales Copy',
+        'page_title' => 'Create Ssles Copy',
         'page_title_desc' => 'Create a new copy of sales order',
         'field' => [
             'customer_type' => 'Type',
@@ -266,8 +283,8 @@ return [
             'warehouse' => 'Warehouse',
             'vendor_trucking' => 'Vendor Trucking',
         ],
-        'so_code' => 'SO Code',
-        'so_copy_code' => 'SO Copy Code',
+        'so_code' => 'Ssles Code',
+        'so_copy_code' => 'Sales Copy Code',
         'so_type' => 'Type',
         'so_date' => 'Date',
         'so_status' => 'Status',
@@ -303,9 +320,27 @@ return [
                     'total_discount' => 'Discount',
                 ],
             ],
+            'open_sales' => [
+                'header' => [
+                    'code' => 'Code',
+                    'so_date' => 'Sales Date',
+                    'status' => 'Status',
+                    'amount' => 'Amount',
+                ],
+            ],
+            'latest_prices' => [
+                'header' => [
+                    'product_name' => 'Product Name',
+                    'market_price' => 'Market Price',
+                    'latest_price' => 'Latest Price',
+                ],
+            ],
         ],
         'tab' => [
             'sales' => 'Sales',
+            'remarks' => 'Remarks',
+            'internal' => 'Internal',
+            'private' => 'Private',
         ],
     ],
     'edit' => [
@@ -383,6 +418,59 @@ return [
                     'percentage' => 'Percentage',
                     'value' => 'Value',
                     'total_discount' => 'Discount',
+                ],
+            ],
+        ],
+        'tab' => [
+            'remarks' => 'Remarks',
+            'internal' => 'Internal',
+            'private' => 'Private',
+        ],
+    ],
+    'partial' => [
+        'customer' => [
+            'title' => '',
+            'tab' => [
+                'customer' => 'Customer Data',
+                'pic' => 'Person In Charge',
+                'bank_account' => 'Bank Account',
+                'sales_orders' => 'Sales Orders',
+                'settings' => 'Settings',
+            ],
+            'field' => [
+                'name' => 'Name',
+                'address' => 'Address',
+                'city' => 'City',
+                'phone' => 'Phone',
+                'tax_id' => 'TaxOutput ID',
+                'remarks' => 'Remarks',
+                'first_name' => 'First Name',
+                'last_name' => 'Last Name',
+                'ic_num' => 'IC Number',
+                'phone_number' => 'Phone Number',
+                'price_level' => 'Price Level',
+                'payment_due_day' => 'Payment Due Day',
+            ],
+            'table_phone' => [
+                'header' => [
+                    'provider' => 'Provider',
+                    'number' => 'Number',
+                    'remarks' => 'Remarks',
+                ],
+            ],
+            'table_bank' => [
+                'header' => [
+                    'bank' => 'Bank',
+                    'account_number' => 'Account',
+                    'remarks' => 'Remarks',
+                ],
+            ],
+            'table_sales_orders' => [
+                'header' => [
+                    'code' => 'Code',
+                    'so_date' => 'Sales Date',
+                    'shipping_date' => 'Shipping Date',
+                    'status' => 'Status',
                 ],
             ],
         ],

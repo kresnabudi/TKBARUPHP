@@ -1,5 +1,4 @@
-
-<?php
+<?php 
 
 return [
     'confirmation' => [
@@ -115,7 +114,7 @@ return [
         'address' => 'Address',
         'city' => 'City',
         'phone' => 'Phone',
-        'tax_id' => 'Tax ID',
+        'tax_id' => 'TaxOutput ID',
         'status' => 'Status',
         'remarks' => 'Remarks',
         'first_name' => 'First Name',
@@ -125,6 +124,11 @@ return [
         'price_level' => 'Price Level',
         'payment_due_day' => 'Payment Due Day',
         'person_in_charge' => 'Person In Charge',
+        'mileage' => 'Mileage',
+        'distance' => 'Distance',
+        'duration' => 'Duration',
+        'latitude' => 'Latitude',
+        'longitude' => 'Longitude',
     ],
     'edit' => [
         'title' => 'Customer',
@@ -159,7 +163,7 @@ return [
             'header' => [
                 'name' => 'Name',
                 'address' => 'Address',
-                'tax_id' => 'Tax ID',
+                'tax_id' => 'TaxOutput ID',
                 'status' => 'Status',
                 'remarks' => 'Remarks',
             ],

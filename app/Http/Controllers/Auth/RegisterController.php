@@ -8,12 +8,17 @@ use App\Model\Store;
 use App\Model\Lookup;
 use App\Model\UserDetail;
 
+use Session;
 use Validator;
+use Carbon\Carbon;
+use LaravelLocalization;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\RegistersUsers;
 
 use App\Services\StoreService;
+
+use App\Events\Auth\UserActivationEmail;
 
 class RegisterController extends Controller
 {
@@ -79,6 +84,16 @@ class RegisterController extends Controller
 
         $usr->api_token = str_random(60);
 
+        if (env('MAIL_USER_ACTIVATION', false)) {
+            $usr->active = false;
+            $usr->activation_token = str_random(60);
+        } else {
+            $usr->active = true;
+        }
+
+        $usr->created_at = Carbon::now();
+        $usr->updated_at = Carbon::now();
+
         if (!empty($data['store_name'])) {
             $id = $this->storeService->createDefaultStore($data['store_name']);
             $usr->store_id = $id;
@@ -93,11 +108,16 @@ class RegisterController extends Controller
 
         $usr->save();
 
-        $usr->roles()->attach(Role::where('name', '=', 'r_user')->get());
+        if (!empty($data['store_name'])) {
+            $usr->roles()->attach(Role::where('name', 'admin')->get());
+        } else {
+            $usr->roles()->attach(Role::where('name', 'user')->get());
+        }
 
         $userdetail = new UserDetail();
         $userdetail->allow_login = true;
-        $userdetail->type = Lookup::whereCode('USERTYPE.U')->first()->code;
+        $userdetail->type = !empty($data['store_name']) ?
+            Lookup::whereCode('USERTYPE.A')->first()->code : Lookup::whereCode('USERTYPE.U')->first()->code;
         $usr->userDetail()->save($userdetail);
 
         return $usr;
@@ -109,7 +129,6 @@ class RegisterController extends Controller
      */
     public function showRegistrationForm(Request $req)
     {
-        $store_mode = '';
         $storeDDL = $this->storeService->getAllStore();
         $store_id = 0;
         $store_name = '';
@@ -117,8 +136,12 @@ class RegisterController extends Controller
         if (!empty($req->query('store_mode'))) {
             if ($req->query('store_mode') == 'create') {
                 $store_mode = 'create';
+            } else if ($req->query('store_mode') == 'store_pick' && !$this->storeService->isEmptyStoreTable()) {
+                $store_mode = 'store_pick';
             } else {
-                if ($req->query('store_mode') == 'use_default' && $this->storeService->defaultStorePresent()) {
+                if ($this->storeService->isEmptyStoreTable()) {
+                    $store_mode = 'create';
+                } else if ($this->storeService->defaultStorePresent()) {
                     $store_mode = 'use_default';
                     $store_id = $this->storeService->getDefaultStore()->id;
                     $store_name = $this->storeService->getDefaultStore()->name;
@@ -129,17 +152,61 @@ class RegisterController extends Controller
         } else {
             if ($this->storeService->isEmptyStoreTable()) {
                 $store_mode = 'create';
+            } else if ($this->storeService->defaultStorePresent()) {
+                $store_mode = 'use_default';
+                $store_id = $this->storeService->getDefaultStore()->id;
+                $store_name = $this->storeService->getDefaultStore()->name;
             } else {
-                if ($this->storeService->defaultStorePresent()) {
-                    $store_mode = 'use_default';
-                    $store_id = $this->storeService->getDefaultStore()->id;
-                    $store_name = $this->storeService->getDefaultStore()->name;
-                } else {
-                    $store_mode = 'store_pick';
-                }
+                $store_mode = 'store_pick';
             }
         }
 
         return view('auth.register', compact('store_mode', 'storeDDL', 'store_id', 'store_name'));
+    }
+
+    protected function registered(Request $request, $user)
+    {
+        if (env('MAIL_USER_ACTIVATION', false)) {
+            event(new UserActivationEmail($user));
+
+            $this->guard()->logout();
+
+            return redirect()->route('login')->withSuccess(
+                LaravelLocalization::getCurrentLocale() == 'id' ?
+                    'Harap Cek Email Untuk Aktivasi':
+                    'Please Check Your Email For Activation'
+            );
+        }
+    }
+
+    protected function activate(Request $request, $token)
+    {
+        $usr = User::whereActivationToken($token)->first();
+
+        if (count($usr) > 0) {
+            $usr->active = true;
+            $usr->save();
+
+            Session::flash('success', LaravelLocalization::getCurrentLocale() == 'id' ?
+                'Akun Anda Sudah Diaktifkan':
+                'Your Account Successfully Activated.');
+
+            return view('auth.login');
+        } else {
+            Session::flash('error', LaravelLocalization::getCurrentLocale() == 'id' ?
+                'Kode Aktivasi Salah Atau Tidak Ditemukan':
+                'Activation Code Is Invalid Or Not Found');
+
+            return view('auth.passwords.activate');
+        }
+    }
+
+    protected function activateResend(Request $request)
+    {
+        $usr = User::whereEmail($request->email)->first();
+
+        if (count($usr) > 0) event(new UserActivationEmail($usr));
+
+        return view('auth.login');
     }
 }

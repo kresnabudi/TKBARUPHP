@@ -13,6 +13,7 @@ use App\Model\PriceLevel;
 use App\Repos\LookupRepo;
 
 use Auth;
+use Config;
 use Validator;
 use Illuminate\Http\Request;
 
@@ -25,7 +26,7 @@ class PriceLevelController extends Controller
 
     public function index()
     {
-        $pricelevel = PriceLevel::paginate(10);
+        $pricelevel = PriceLevel::paginate(Config::get('const.PAGINATION'));
         return view('price_level.index')->with('pricelevel', $pricelevel);
     }
 
@@ -37,8 +38,8 @@ class PriceLevelController extends Controller
 
     public function create()
     {
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
-        $plTypeDDL = LookupRepo::findByCategory('PRICELEVELTYPE')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
+        $plTypeDDL = LookupRepo::findByCategory('PRICELEVELTYPE')->pluck('i18nDescription', 'code');
 
         return view('price_level.create', compact('statusDDL', 'plTypeDDL'));
     }
@@ -50,32 +51,28 @@ class PriceLevelController extends Controller
             'weight' => 'required',
             'name' => 'required|string|max:255',
             'status' => 'required|string|max:255',
+        ])->validate();
+
+        PriceLevel::create([
+            'store_id' => Auth::user()->store->id,
+            'type' => $data['type'],
+            'weight' => $data['weight'],
+            'name' => $data['name'],
+            'description' => $data['description'],
+            'increment_value' => $data['increment_value'],
+            'percentage_value' => $data['percentage_value'],
+            'status' => $data['status'],
         ]);
 
-        if ($validator->fails()) {
-            return redirect(route('db.price.price_level.create'))->withInput()->withErrors($validator);
-        } else {
-            PriceLevel::create([
-                'store_id' => Auth::user()->store->id,
-                'type' => $data['type'],
-                'weight' => $data['weight'],
-                'name' => $data['name'],
-                'description' => $data['description'],
-                'increment_value' => $data['increment_value'],
-                'percentage_value' => $data['[percentage_value'],
-                'status' => $data['status'],
-            ]);
-
-            return redirect(route('db.price.price_level'));
-        }
+        return response()->json();
     }
 
     public function edit($id)
     {
         $pricelevel = PriceLevel::find($id);
 
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
-        $plTypeDDL = LookupRepo::findByCategory('PRICELEVELTYPE')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
+        $plTypeDDL = LookupRepo::findByCategory('PRICELEVELTYPE')->pluck('i18nDescription', 'code');
 
         return view('price_level.edit', compact('pricelevel', 'plTypeDDL', 'statusDDL'));
     }
@@ -83,7 +80,7 @@ class PriceLevelController extends Controller
     public function update($id, Request $req)
     {
         PriceLevel::find($id)->update($req->all());
-        return redirect(route('db.price.price_level'));
+        return response()->json();
     }
 
     public function delete($id)

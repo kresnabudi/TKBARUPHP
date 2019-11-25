@@ -74,6 +74,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property float $disc_value
  * @method static \Illuminate\Database\Query\Builder|\App\Model\SalesOrder whereDiscPercent($value)
  * @method static \Illuminate\Database\Query\Builder|\App\Model\SalesOrder whereDiscValue($value)
+ * @property string $internal_remarks
+ * @property string $private_remarks
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\SalesOrder whereInternalRemarks($value)
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\SalesOrder wherePrivateRemarks($value)
+ * @property-read bool $status_localized
+ * @property-read bool $total_amount_text
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\SalesOrder onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\SalesOrder withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\SalesOrder withoutTrashed()
+ * @property-read mixed $h_id
  */
 class SalesOrder extends Model
 {
@@ -100,6 +112,8 @@ class SalesOrder extends Model
         'so_type',
         'status',
         'remarks',
+        'internal_remarks',
+        'private_remarks',
         'disc_percent',
         'disc_value',
     ];
@@ -113,9 +127,25 @@ class SalesOrder extends Model
         'deleted_at',
     ];
 
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'hId',
+        'status_localized',
+        'total_amount_text'
+    ];
+
     public function hId()
     {
         return HashIds::encode($this->attributes['id']);
+    }
+
+    public function getHIdAttribute()
+    {
+        return $this->hId();
     }
 
     public function items()
@@ -207,14 +237,6 @@ class SalesOrder extends Model
         return $this->totalAmount() - $this->totalAmountPaid();
     }
 
-    public function updatePaymentStatus()
-    {
-        if($this->totalAmount() === $this->totalAmountPaid())
-            $this->status = "SOSTATUS.C";
-
-        $this->save();
-    }
-
     public function itemTotalAmount()
     {
         $itemAmounts = $this->items->map(function($item){
@@ -240,6 +262,43 @@ class SalesOrder extends Model
             && $payment->status !== 'GIROPAYMENTSTATUS.WE'
             && $payment->status !== 'PAYMENTTYPE.FR';
         });
+    }
+
+    public function to_text(){
+
+        if($this->customer_type == 'CUSTOMERTYPE.R'){
+            $this->customer_text  = $this->customer->name;
+        }else{
+            $this->customer_text  = $this->walk_in_customer;
+        }
+
+        $this->created_text           = date('d-m-Y', strtotime($this->so_created));
+        $this->total_amount_text      = number_format($this->totalAmount(), 0);
+        $this->total_amount_paid_text = number_format($this->totalAmountPaid(), 0);
+        $this->totat_amount_rest_text = number_format($this->totalAmount() - $this->totalAmountPaid(), 0);
+        $this->id_text                = $this->hId();
+
+        return $this;
+    }
+
+    /**
+     * Get the status_localized.
+     *
+     * @return bool
+     */
+    public function getStatusLocalizedAttribute()
+    {
+        return __('lookup.' . $this->attributes['status']);
+    }
+
+    /**
+     * Get the total_amount_text.
+     *
+     * @return bool
+     */
+    public function getTotalAmountTextAttribute()
+    {
+        return number_format($this->totalAmount(), 0);
     }
 
     public static function boot()

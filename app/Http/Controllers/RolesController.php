@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 use DB;
+use Config;
 use Session;
 use Validator;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class RolesController extends Controller
 {
     public function index()
     {
-        $rolelist = Role::paginate(10);
+        $rolelist = Role::paginate(Config::get('const.PAGINATION'));
 
         return view('roles.index', compact('rolelist'));
     }
@@ -43,27 +44,21 @@ class RolesController extends Controller
             'name' => 'required|max:255',
             'display_name' => 'required|max:255',
             'description' => 'required',
-        ]);
+        ])->validate();
 
-        if ($validator->fails()) {
-            return redirect(route('db.admin.roles.create'))->withInput()->withErrors($validator);
-        } else {
-            DB::transaction(function() use ($data) {
-                $role = new Role;
-                $role->name = $data['name'];
-                $role->display_name = $data['display_name'];
-                $role->description = $data['description'];
-                $role->save();
+        DB::transaction(function() use ($data) {
+            $role = new Role;
+            $role->name = $data['name'];
+            $role->display_name = $data['display_name'];
+            $role->description = $data['description'];
+            $role->save();
 
-                foreach ($data['permission'] as $pl) {
-                    $role->permissions()->attach($pl);
-                }
-            });
+            foreach ($data['permission'] as $pl) {
+                $role->permissions()->attach($pl);
+            }
+        });
 
-            Session::flash('success', 'New User Created');
-
-            return redirect(route('db.admin.roles'));
-        }
+        return response()->json();
     }
 
     public function edit($id)
@@ -77,7 +72,7 @@ class RolesController extends Controller
 
     public function update($id, Request $req)
     {
-        $this->validate($req, [
+        $validator = $this->validate($req, [
             'name' => 'required|max:255',
             'display_name' => 'required|max:255',
             'description' => 'required',
@@ -95,8 +90,8 @@ class RolesController extends Controller
                 'description' => $req['description'],
             ]);
         });
-        
-        return redirect(route('db.admin.roles'));
+
+        return response()->json();
     }
 
     public function delete($id)

@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use Config;
 use Validator;
 use Illuminate\Http\Request;
 use App\Repos\LookupRepo;
@@ -19,12 +20,12 @@ class CurrenciesController extends Controller
 	}
 	public function index()
 	{
-		$currencieslist = Currencies::paginate(10);
+		$currencieslist = Currencies::paginate(Config::get('const.PAGINATION'));
         return view('currencies.index', compact('currencieslist'));
 	}
 	public function create()
 	{
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 		return view('currencies.create' , compact('statusDDL'));
 	}
 	public function store(Request $req)
@@ -33,20 +34,16 @@ class CurrenciesController extends Controller
             'name' => 'required|string|max:255',
             'symbol' => 'required|string|max:255',
             'status' => 'required|string|max:255',
+        ])->validate();
+
+        Currencies::create([
+            'name' => $req['name'],
+            'symbol' => $req['symbol'],
+            'status' => $req['status'],
+            'remarks' => $req['remarks'],
         ]);
 
-        if ($validator->fails()) {
-            return redirect(route('db.admin.currencies.create'))->withInput()->withErrors($validator);
-        } else {
-            Currencies::create([
-                'name' => $req['name'],
-                'symbol' => $req['symbol'],
-                'status' => $req['status'],
-                'remarks' => $req['remarks'],
-            ]);
-
-            return redirect(route('db.admin.currencies'));
-        }
+        return response()->json();
 	}
     public function show($id)
     {
@@ -65,13 +62,11 @@ class CurrenciesController extends Controller
             'name' => 'required|string|max:255',
             'symbol' => 'required|string|max:255',
             'status' => 'required|string|max:255'
-        ]);
-        if($validator->fails()){
-            return redirect(route('db.admin.currencies.edit'))->withInput()->withErrors($validator);
-        }else{
-            Currencies::find($id)->update($req->all());
-            return redirect(route('db.admin.currencies'));
-        }
+        ])->validate();
+	    
+        Currencies::find($id)->update($req->all());
+
+        return response()->json();
     }
     public function delete($id)
     {

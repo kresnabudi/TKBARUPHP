@@ -66,6 +66,15 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <label for="inputProductImage" class="col-sm-2 control-label">&nbsp;</label>
+                        <div class="col-sm-10">
+                            @if(!empty($product->image_path))
+                                <img src="{{ asset('images/' . $product->image_path) }}" width="200px" height="200px" class="img-responsive">
+                            @else
+                            @endif
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label for="inputShortCode" class="col-sm-2 control-label">@lang('product.field.short_code')</label>
                         <div class="col-sm-10">
                             <label id="inputShortCode" class="control-label">
@@ -143,7 +152,7 @@
                     <div class="form-group">
                         <label for="inputButton" class="col-sm-2 control-label"></label>
                         <div class="col-sm-10">
-                            <a href="{{ route('db.master.product') }}" class="btn btn-default">Back</a>
+                            <a href="{{ route('db.master.product') }}" class="btn btn-default">@lang('buttons.back_button')</a>
                         </div>
                     </div>
                 </div>

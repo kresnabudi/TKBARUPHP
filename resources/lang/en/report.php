@@ -22,7 +22,7 @@ return [
             'profile' => 'Profile',
             'name' => 'Name',
             'permission' => 'Permission',
-            'tax_id' => 'Tax ID',
+            'tax_id' => 'TaxOutput ID',
             'symbol' => 'Symbol',
             'short_name' => 'Short Name',
         ],
@@ -60,11 +60,107 @@ return [
         'header' => [
             'title' => 'Monitoring',
         ],
+        'componens' => [
+            'po' => [
+                'page_title' => 'Purchase Order',
+            ],
+            'so' => [
+                'page_title' => 'Sales Order',
+            ],
+        ],
+        'components' => [
+            'po' => [
+                'table' => [
+                    'header' => [
+                        'code' => 'Code',
+                        'po_date' => 'Date',
+                        'supplier' => 'Supplier',
+                        'shipping_date' => 'Shipping Date',
+                        'status' => 'Status',
+                    ],
+                    'item' => [
+                        'header' => [
+                            'product_name' => 'Name',
+                            'unit' => 'Unit',
+                            'brutto' => 'Brutto',
+                            'netto' => 'Netto',
+                            'tare' => 'Tare',
+                        ],
+                    ],
+                ],
+            ],
+            'so' => [
+                'table' => [
+                    'header' => [
+                        'code' => 'Code',
+                        'so_date' => 'Date',
+                        'customer' => 'Customer',
+                        'shipping_date' => 'Shipping Date',
+                        'status' => 'Status',
+                    ],
+                    'item' => [
+                        'header' => [
+                            'product_name' => 'Product Name',
+                            'unit' => 'Unit',
+                            'brutto' => 'Brutto',
+                        ],
+                    ],
+                ],
+            ],
+        ],
     ],
     'tax' => [
         'title' => 'Report Management',
-        'page_title' => 'Tax Report',
+        'page_title' => 'TaxOutput Report',
         'page_title_desc' => '',
+        'header' => [
+            'title' => 'TaxOutput Report',
+        ],
+        'nav_tabs' => [
+            'invoice_input' => 'Invoice Input',
+            'invoice_output_summary' => 'Invoice Output Summary',
+            'invoice_output_detail' => 'Invoice Output Detail',
+            'flow' => 'Flow',
+        ],
+        'input' => [
+            'table' => [
+                'header' => [
+                    'invoice_date' => 'Invoice Date',
+                    'invoice_no' => 'Invoice Number',
+                    'detail' => 'Detail',
+                    'qty' => 'Unit (kg)',
+                    'unit_price' => 'Unit Price',
+                    'tax_base' => 'Tax Base (Rp)',
+                    'gst' => 'GST (Rp)',
+                    'grand_total' => 'Total Paid (Rp)',
+                ],
+            ],
+        ],
+        'output_summary' => [
+            'table' => [
+                'header' => [
+                    'date' => 'Date',
+                    'unit_price' => 'Unit Price',
+                    'qty' => 'Quantity (kg)',
+                    'tax_base' => 'Tax Base',
+                    'gst' => 'GST',
+                    'total_price' => 'Total',
+                    'product' => 'Product',
+                ],
+            ],
+        ],
+        'output' => [
+            'table' => [
+                'header' => [
+                    'date' => 'Date',
+                    'name' => 'Name',
+                    'address' => 'Address',
+                    'unit_price' => 'Unit Price',
+                    'qty' => 'Quantity (kg)',
+                    'product' => 'Product',
+                ],
+            ],
+        ],
     ],
     'transaction' => [
         'title' => 'Report Management',
@@ -73,6 +169,8 @@ return [
         'header' => [
             'purchase_order' => 'Purchase Order',
             'sales_order' => 'Sales Order',
+            'purchase_order_today_summary' => 'Daily Summary Purchase Order',
+            'sales_order_today_summary' => 'Daily Summary Sales Order',
         ],
         'field' => [
             'po_code' => 'PO Code',
@@ -107,7 +205,7 @@ return [
                 'city' => 'City',
                 'phone_number' => 'Phone Number',
                 'fax_num' => 'Fax Number',
-                'tax_id' => 'Tax ID',
+                'tax_id' => 'TaxOutput ID',
                 'payment_due_day' => 'Payment Due Day',
                 'price_level' => 'Price Level',
                 'status' => 'Status',
@@ -141,7 +239,7 @@ return [
                 'city' => 'City',
                 'phone_number' => 'Phone Number',
                 'fax_number' => 'Fax Number',
-                'tax_id' => 'Tax ID',
+                'tax_id' => 'TaxOutput ID',
                 'payment_due_day' => 'Payment Due Day',
                 'status' => 'Status',
                 'remarks' => 'Remarks',
@@ -267,7 +365,7 @@ return [
                 'store' => 'Store',
                 'name' => 'Name',
                 'address' => 'Address',
-                'tax_id' => 'Tax Id',
+                'tax_id' => 'TaxOutput Id',
                 'status' => 'Status',
                 'remarks' => 'Remarks',
             ],
@@ -305,16 +403,18 @@ return [
             'report_name' => 'Store Report',
             'parameter' => [
                 'name' => 'Name',
-                'tax_id' => 'Tax Id',
+                'tax_id' => 'TaxOutput Id',
             ],
             'header' => [
                 'name' => 'Name',
                 'address' => 'Address',
                 'phone_num' => 'Phone Number',
                 'fax_num' => 'Fax Number',
-                'tax_id' => 'Tax ID',
+                'tax_id' => 'TaxOutput ID',
                 'status' => 'Status',
                 'remarks' => 'Remarks',
+                'product_name' => '',
+                'price' => '',
             ],
             'footer' => 'Printed by :user on :date',
         ],
@@ -406,6 +506,43 @@ return [
             ],
             'report_name' => 'Sales Order Report',
             'footer' => 'Printed by :user on :date',
+        ],
+        'today_price' => [
+            'report_name' => 'Price Lists',
+            'header' => [
+                'product_type' => 'Type',
+                'product_name' => 'Name',
+                'price' => 'Price',
+            ],
+        ],
+        'po_summary' => [
+            'report_name' => 'Daily Summary Purchase Order',
+            'header' => [
+                'code' => 'Code',
+                'po_date' => 'Date',
+                'supplier' => 'Supplier',
+                'amount' => 'Amount',
+                'status' => 'Status',
+            ],
+        ],
+        'so_summary' => [
+            'report_name' => 'Daily Summary Sales Order',
+            'header' => [
+                'code' => 'Code',
+                'so_date' => 'Date',
+                'customer' => 'Customer',
+                'amount' => 'Amount',
+                'status' => 'Status',
+            ],
+        ],
+        'stock_list' => [
+            'report_name' => 'Stock List',
+            'header' => [
+                'warehouse' => 'Warehouse',
+                'product_type' => 'Product Type',
+                'product_name' => 'Product',
+                'quantity' => 'Quantity',
+            ],
         ],
     ],
 ];

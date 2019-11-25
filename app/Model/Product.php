@@ -59,6 +59,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Query\Builder|\App\Model\Product whereMinimalInStock($value)
  * @property int $minimum_in_stock
  * @method static \Illuminate\Database\Query\Builder|\App\Model\Product whereMinimumInStock($value)
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Product onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Product withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Product withoutTrashed()
+ * @property-read mixed $base_unit_symbol
  */
 class Product extends Model
 {
@@ -81,6 +87,10 @@ class Product extends Model
         'minimal_in_stock',
         'status',
         'remarks'
+    ];
+
+    protected $appends = [
+        'baseUnitSymbol'
     ];
 
     protected $hidden = [
@@ -117,6 +127,17 @@ class Product extends Model
         return $this->hasMany('App\Model\ProductCategory');
     }
 
+    public function getBaseUnitSymbolAttribute()
+    {
+        $ret = '';
+        foreach ($this->productUnits as $produnit) {
+            if ($produnit->is_base) {
+                $ret = $produnit->unit->symbol;
+            }
+        }
+        return $ret;
+    }
+
     public function getProductUnitsJSON()
     {
         $pu = array();
@@ -126,6 +147,7 @@ class Product extends Model
                 'selected' => false,
                 'unit_id' => (string)$produnit->unit_id,
                 'is_base' => empty($produnit->is_base) ? false : true,
+                'is_base_val' => empty($produnit->is_base) ? false : true,
                 'conversion_value' => $produnit->conversion_value,
                 'remarks' => $produnit->remarks,
             ));

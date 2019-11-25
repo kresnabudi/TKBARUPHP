@@ -10,8 +10,9 @@ namespace App\Http\Controllers;
 
 use DB;
 use Auth;
-use Illuminate\Support\Facades\Input;
+use Config;
 use Validator;
+use Exception;
 use LaravelLocalization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -24,6 +25,8 @@ use App\Model\Currencies;
 use App\Model\CurrenciesConversion;
 
 use App\Repos\LookupRepo;
+
+use App\Util\PHP2Moment;
 
 use App\Services\StoreService;
 
@@ -41,7 +44,7 @@ class StoreController extends Controller
     {
         Log::info('[StoreController@index] ');
 
-        $store = Store::paginate(10);
+        $store = Store::paginate(Config::get('const.PAGINATION'));
 
         return view('store.index', compact('store'));
     }
@@ -59,11 +62,13 @@ class StoreController extends Controller
     {
         Log::info('[StoreController@create] ');
 
+        $mapsAPIKey = env('MAPS_API_KEY');
+
         $bankDDL = Bank::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
-        $yesnoDDL = LookupRepo::findByCategory('YESNOSELECT')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
+        $yesnoDDL = LookupRepo::findByCategory('YESNOSELECT')->pluck('i18nDescription', 'code');
         $currenciesDDL = Currencies::whereStatus('STATUS.ACTIVE')->get(['id', 'name', 'symbol']);
-        return view('store.create', compact('statusDDL', 'yesnoDDL', 'bankDDL', 'currenciesDDL'));
+        return view('store.create', compact('statusDDL', 'yesnoDDL', 'bankDDL', 'currenciesDDL', 'mapsAPIKey'));
     }
 
     public function store(Request $data)
@@ -72,14 +77,15 @@ class StoreController extends Controller
 
         $this->validate($data, [
             'name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'phone_num' => 'required|string|max:255',
             'tax_id' => 'required|string|max:255',
             'status' => 'required',
             'is_default' => 'required',
             'image_path' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
-        DB::transaction(function() use($data) {
+
+        DB::beginTransaction();
+
+        try {
             $imageName = '';
 
             if (!empty($data->image_path)) {
@@ -100,6 +106,8 @@ class StoreController extends Controller
             $store = Store::create([
                 'name' => $data['name'],
                 'address' => $data['address'],
+                'latitude' => empty($data['latitude']) ? 0:$data['latitude'],
+                'longitude' => empty($data['longitude']) ? 0:$data['longitude'],
                 'phone_num' => $data['phone_num'],
                 'fax_num' => $data['fax_num'],
                 'tax_id' => $data['tax_id'],
@@ -129,45 +137,65 @@ class StoreController extends Controller
             for ($i = 0; $i < count($data['currencies']); $i++) {
                 $curConv = new CurrenciesConversion();
                 $curConv->currencies_id = $data["currencies"][$i];
-                $curConv->is_base = $data["base_currencies"][$i] == '1'?true:false;
+                $curConv->is_base = $data["base_currencies"][$i] == '1' ? true:false;
                 $curConv->conversion_value = $data["currencies_conversion_value"][$i];
                 $curConv->remarks = $data["currencies_remarks"][$i];
 
                 $store->currenciesConversions()->save($curConv);
             }
-        });
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+        };
 
-        return redirect(route('db.admin.store'));
+        return response()->json();
     }
 
     public function edit($id)
     {
         Log::info('[StoreController@edit] $id:' . $id);
 
+        $mapsAPIKey = env('MAPS_API_KEY');
+
         $store = Store::with('bankAccounts.bank')->where('id', '=' , $id)->first();
 
         $bankDDL = Bank::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
-        $yesnoDDL = LookupRepo::findByCategory('YESNOSELECT')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
+        $yesnoDDL = LookupRepo::findByCategory('YESNOSELECT')->pluck('i18nDescription', 'code');
         $currenciesDDL = Currencies::whereStatus('STATUS.ACTIVE')->get(['id', 'name', 'symbol']);
 
-        return view('store.edit', compact('store', 'statusDDL', 'yesnoDDL', 'bankDDL','currenciesDDL'));
+        return view('store.edit', compact('store', 'statusDDL', 'yesnoDDL', 'bankDDL','currenciesDDL', 'mapsAPIKey'));
     }
 
     public function update($id, Request $data)
     {
         Log::info('[StoreController@update] $id:' . $id);
 
-        DB::transaction(function() use ($id, $data) {
+        DB::beginTransaction();
+
+        try {
             $store = Store::find($id);
 
             $imageName = '';
 
-            if (!empty($data->image_path)) {
-                $imageName = time() . '.' . $data->image_path->getClientOriginalExtension();
-                $path = public_path('images') . '/' . $imageName;
+            if (!empty($store->image_filename)) {
+                if (!empty($data->image_path)) {
+                    $imageName = time() . '.' . $data->image_path->getClientOriginalExtension();
+                    $path = public_path('images') . '/' . $imageName;
 
-                Image::make($data->image_path->getRealPath())->resize(160, 160)->save($path);
+                    Image::make($data->image_path->getRealPath())->resize(160, 160)->save($path);
+                } else {
+                    $imageName = $store->image_filename;
+                }
+            } else {
+                if (!empty($data->image_path)) {
+                    $imageName = time() . '.' . $data->image_path->getClientOriginalExtension();
+                    $path = public_path('images') . '/' . $imageName;
+
+                    Image::make($data->image_path->getRealPath())->resize(160, 160)->save($path);
+                } else {
+                    $imageName = '';
+                }
             }
 
             if ($store->is_default == 'YESNOSELECT.NO' && $data['is_default'] == 'YESNOSELECT.YES') {
@@ -203,6 +231,8 @@ class StoreController extends Controller
 
             $store->name = $data['name'];
             $store->address = $data['address'];
+            $store->latitude = empty($data['latitude']) ? 0:$data['latitude'];
+            $store->longitude = empty($data['longitude']) ? 0:$data['longitude'];
             $store->phone_num = $data['phone_num'];
             $store->fax_num = $data['fax_num'];
             $store->tax_id = $data['tax_id'];
@@ -220,9 +250,13 @@ class StoreController extends Controller
             $store->ribbon = $data['ribbon'];
 
             $store->save();
-        });
 
-        return redirect(route('db.admin.store'));
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+        };
+
+        return response()->json();
     }
 
     public function delete($id)
@@ -259,9 +293,17 @@ class StoreController extends Controller
 
     public function applySettings(Request $req)
     {
-        return response()->json([
-            'return' => 'success'
-        ]);
+        $store = Store::whereId(Auth::user()->store->id)->first();
+
+        $store->date_format = PHP2Moment::convertToPHPDate($req['df']);
+        $store->time_format = PHP2Moment::convertToPHPDate($req['tf']);
+        $store->thousand_separator = $req['ts'];
+        $store->decimal_separator = $req['ds'];
+        $store->decimal_digit = $req['dd'];
+
+        $store->save();
+
+        return response()->json();
     }
 
     public function isUnfinishedStoreExist()

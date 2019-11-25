@@ -344,9 +344,202 @@ class LookupTableSeeder extends Seeder
                 'description' => 'Salary Payed Upfront',
                 'category' => 'EMPSALARYACTION',
             ],
+            [
+                'code' => 'GSTTRANSACTIONTYPEOUTPUT.4',
+                'description' => '4 - Ekspor',
+                'category' => 'GSTTRANSACTIONTYPEOUTPUT',
+            ],
+            [
+                'code' => 'GSTTRANSACTIONTYPEOUTPUT.5',
+                'description' => '5 - Penyerahan Dalam Negri Dengan Faktur Pajak',
+                'category' => 'GSTTRANSACTIONTYPEOUTPUT',
+            ],
+            [
+                'code' => 'GSTTRANSACTIONTYPEOUTPUT.1',
+                'description' => '1 - Impor BKP dan Pemanfaatan JKP/BKP Tidak Berwujud dari Luar Daerah Pabean',
+                'category' => 'GSTTRANSACTIONTYPEINPUT',
+            ],
+            [
+                'code' => 'GSTTRANSACTIONTYPEOUTPUT.2',
+                'description' => '2 - Perolehan BKP/JKP Dari Dalam Negri',
+                'category' => 'GSTTRANSACTIONTYPEINPUT',
+            ],
+            [
+                'code' => 'GSTTRANSACTIONTYPEOUTPUT.3',
+                'description' => '3 - Pajak Masukan Yang Tidak Dapat Dikreditkan dan/atau Pajak Masukan dan PPnBM yang atas impor atau perolehannya mendapat fasilitas',
+                'category' => 'GSTTRANSACTIONTYPEINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILOUTPUT.01',
+                'description' => '1 - Kepada Pihak yang Bukan Pemungut PPN',
+                'category' => 'TRANSACTIONDETAILOUTPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILOUTPUT.02',
+                'description' => '2 - Kepada Pemungut Bendaharawan',
+                'category' => 'TRANSACTIONDETAILOUTPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILOUTPUT.03',
+                'description' => '3 - Kepada Pemungut Selain Bendaharawan',
+                'category' => 'TRANSACTIONDETAILOUTPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILOUTPUT.04',
+                'description' => '4 - Dasar Pengenaan Pajak (DPP) Nilai Lain',
+                'category' => 'TRANSACTIONDETAILOUTPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILOUTPUT.06',
+                'description' => '6 - Penyerahan Lainnya',
+                'category' => 'TRANSACTIONDETAILOUTPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILOUTPUT.07',
+                'description' => '7 - Penyerahan yang PPN-nya Tidak Dipungut',
+                'category' => 'TRANSACTIONDETAILOUTPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILOUTPUT.08',
+                'description' => '8 - Penyerahan yang PPN-nya Dibebaskan',
+                'category' => 'TRANSACTIONDETAILOUTPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILOUTPUT.09',
+                'description' => '9 - Penyerahan Aktiva (Pasal 16D UU PPN)',
+                'category' => 'TRANSACTIONDETAILOUTPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.01',
+                'description' => '1 - Kepada Pihak yang Bukan Pemungut PPN',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.02',
+                'description' => '1 - Kepada Pihak yang Bukan Pemungut PPN',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.03',
+                'description' => '2 - Kepada Pemungut Bendaharawan',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.04',
+                'description' => '3 - Kepada Pemungut Selain Bendaharawan',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.05',
+                'description' => '4 - Dasar Pengenaan Pajak (DPP) Nilai Lain',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.06',
+                'description' => '6 - Penyerahan Lainnya',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.07',
+                'description' => '7 - Penyerahan yang PPN-nya Tidak Dipungut',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.08',
+                'description' => '8 - Penyerahan yang PPN-nya Dibebaskan',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.09',
+                'description' => '9 - Penyerahan Aktiva (Pasal 16D UU PPN)',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.10',
+                'description' => '10 - Impor Barang Kena Pajak (BKP)',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.11',
+                'description' => '11 - Pemanfaatan Barang Kena Pajak (BKP) Tidak Berwujud',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDETAILINPUT.12',
+                'description' => '12 - Pemanfaatan Jasa Kena Pajak (JKP)',
+                'category' => 'TRANSACTIONDETAILINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDOCOUTPUT.1',
+                'description' => '1 - Faktur Pajak',
+                'category' => 'TRANSACTIONDOCOUTPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDOCOUTPUT.2',
+                'description' => '2 - Faktur Pajak Pengganti',
+                'category' => 'TRANSACTIONDOCOUTPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDOCINPUT.1',
+                'description' => '1 - Faktur Pajak',
+                'category' => 'TRANSACTIONDOCINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDOCINPUT.2',
+                'description' => '2 - PIB dan SSP',
+                'category' => 'TRANSACTIONDOCINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDOCINPUT.3',
+                'description' => '3 - Surat Setoran Pajak',
+                'category' => 'TRANSACTIONDOCINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDOCINPUT.4',
+                'description' => '4 - Nota Retur / Nota Pembatalan',
+                'category' => 'TRANSACTIONDOCINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDOCINPUT.5',
+                'description' => '5 - Dokumen yang Dipersamakan dengan Faktur Pajak',
+                'category' => 'TRANSACTIONDOCINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDOCINPUT.6',
+                'description' => '6 - Faktur Pajak Batal',
+                'category' => 'TRANSACTIONDOCINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDOCINPUT.7',
+                'description' => '7 - Faktur Pajak Pengganti ',
+                'category' => 'TRANSACTIONDOCINPUT',
+            ],
+            [
+                'code' => 'TRANSACTIONDOCINPUT.8',
+                'description' => '8 - pemberitahuan impor barang (PIB)',
+                'category' => 'TRANSACTIONDOCINPUT',
+            ],
+            [
+                'code' => 'STOCKMERGETYPE.FIFO',
+                'description' => 'Stock Merge Type FIFO',
+                'category' => 'STOCKMERGETYPE',
+            ],
+            [
+                'code' => 'STOCKMERGETYPE.LIFO',
+                'description' => 'Stock Merge Type LIFO',
+                'category' => 'STOCKMERGETYPE',
+            ],
+            [
+                'code' => 'STOCKMERGETYPE.AVG',
+                'description' => 'Stock Merge Type AVG',
+                'category' => 'STOCKMERGETYPE',
+            ],
+
         ];
         foreach ($lookup as $key => $value) {
-            Lookup::create($value);
+            if (count(Lookup::whereCode($value['code'])->get()) == 0) {
+                Lookup::create($value);
+            }
         }
     }
 }

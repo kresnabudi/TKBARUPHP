@@ -132,6 +132,20 @@ return [
                 'payment_amount' => 'Jumlah',
             ],
         ],
+        'broughtforward' => [
+            'title' => 'Pengalihan Tagihan',
+            'page_title' => 'Pengalihan Tagihan',
+            'page_title_desc' => '',
+            'header' => [
+                'title' => 'Pengalihan Tagihan',
+            ],
+            'invoice' => [
+                'next' => 'Gabung Nota',
+                'so_code' => 'Kode Penjualan',
+                'name' => 'Nama',
+                'remarks' => 'Keterangan',
+            ],
+        ],
     ],
     'copy' => [
         'create' => [
@@ -247,6 +261,9 @@ return [
     'create' => [
         'box' => [
             'transaction_summary' => 'Transaksi',
+            'last_sale' => 'Penjualan Terakhir',
+            'open_sales' => 'Penjualan Terbuka',
+            'latest_prices' => 'Harga Terbaru',
             'customer' => 'Pelanggan',
             'sales_order_detail' => 'Detail Penjualan',
             'shipping' => 'Pengiriman',
@@ -302,9 +319,27 @@ return [
                     'total_discount' => 'Diskon',
                 ],
             ],
+            'open_sales' => [
+                'header' => [
+                    'code' => 'Kode',
+                    'so_date' => 'Tgl Penjualan',
+                    'status' => 'Status',
+                    'amount' => 'Total',
+                ],
+            ],
+            'latest_prices' => [
+                'header' => [
+                    'product_name' => 'Nama Produk',
+                    'market_price' => 'Harga Pasar',
+                    'latest_price' => 'Harga Terbaru',
+                ],
+            ],
         ],
         'tab' => [
             'sales' => 'Penjualan',
+            'remarks' => 'Keterangan',
+            'internal' => 'Internal',
+            'private' => 'Private',
         ],
         'so_copy_code' => '',
     ],
@@ -383,6 +418,59 @@ return [
                     'percentage' => 'Persentase',
                     'value' => 'Nilai',
                     'total_discount' => 'Diskon',
+                ],
+            ],
+        ],
+        'tab' => [
+            'remarks' => 'Keterangan',
+            'internal' => 'Internal',
+            'private' => 'Privat',
+        ],
+    ],
+    'partial' => [
+        'customer' => [
+            'title' => '',
+            'tab' => [
+                'customer' => 'Data Pelanggan',
+                'pic' => 'Penanggungjawab',
+                'bank_account' => 'Akun Bank',
+                'sales_orders' => 'Penjualan',
+                'settings' => 'Setting',
+            ],
+            'field' => [
+                'name' => 'Nama',
+                'address' => 'Alamat',
+                'city' => 'Kota',
+                'phone' => 'Telepon',
+                'tax_id' => 'NPWP No',
+                'remarks' => 'Keterangan',
+                'first_name' => 'Nama Depan',
+                'last_name' => 'Nama Belakang',
+                'ic_num' => 'KTP No.',
+                'phone_number' => 'No Telepon',
+                'price_level' => 'Tingkat Harga',
+                'payment_due_day' => 'Tenggat Pembayaran',
+            ],
+            'table_phone' => [
+                'header' => [
+                    'provider' => 'Provider',
+                    'number' => 'Nomor',
+                    'remarks' => 'Keterangan',
+                ],
+            ],
+            'table_bank' => [
+                'header' => [
+                    'bank' => 'Bank',
+                    'account_number' => 'Nomor Akun',
+                    'remarks' => 'Keterangan',
+                ],
+            ],
+            'table_sales_orders' => [
+                'header' => [
+                    'code' => 'Kode',
+                    'so_date' => 'Tgl Penjualan',
+                    'shipping_date' => 'Tgl Kirim',
+                    'status' => 'Status',
                 ],
             ],
         ],

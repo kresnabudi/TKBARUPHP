@@ -15,8 +15,17 @@ based with the best practice that every people in the world is using. Only with 
 forced to always learn and learn and learn to adapt with the latest technology and make us keep up to date
 with the current technology.
 
+# Contributors
+Thank you for all your effort/contributions/support for this project, I'm hoping that this project can be one of your tool to elevate your knowledge and skill. Keep on coding and supporting open source community.  
+Here are the list of people that contributing more than 10 issues/tasks/features
+ * [DecoyDoll](http://github.com/DecoyDoll)
+ * For the list of all the contributors click [here](https://github.com/GitzJoey/TKBARUPHP/graphs/contributors)
+
+# Contributing
+Start contributing by joining the team
+
 # Requirements
-* [Latest PHP 5](http://php.net)
+* [PHP](http://php.net)
 * [Laravel](http://www.laravel.com)
 * [VueJS](http://www.vuejs.org)
 * [Composer](http://getcomposer.org) 
@@ -30,44 +39,22 @@ Clone repository
 $ git clone https://github.com/gitzjoey/tkbaruphp.git
 ```
 
-Do composer install/update
+Rename the .env.example to .env and change setting accordingly.  
+Make sure the database schema also already created in your database.
+```
+Windows -> $ copy .env.example .env
+  
+Linux   -> $ cp .env.example .env
+```
 
+Run the Composer
 ```
 $ composer install
-
-or
-
-$ composer update
 ```
 
-Do NPM Install
+Run the installation process
 ```
-$ npm install
-```
-
-Do Gulp
-```
-$ gulp --production
-```
-Rename the .env.example to .env and change setting accordingly.
-```
-$ cp .env.example .env
-```
-
-Generate application key
-```
-$ php artisan key:generate
-```
-
-Do Migration and Seeder
-```
-$ php artisan migrate 
-$ php artisan db:seed
-```
-
-Linking public/storage
-```
-$ php artisan storage:link
+$ php artisan app:install
 ```
 
 If something seem not right maybe try to dump-autoload and redo the process
@@ -78,5 +65,7 @@ $ composer dump-autoload
 # Features Suggestion
 Fell free to add any feature suggestion by creating new **Issues**, and we can start discussing it
 
-# Contributing
-Start contributing by joining the team
+# License
+[MIT License](http://opensource.org/licenses/MIT)  
+The MIT License is a permissive license.  
+It lets you do anything with this code as long as you provide **attribution back to this website**. 

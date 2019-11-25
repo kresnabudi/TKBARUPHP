@@ -8,7 +8,7 @@
 
 namespace App\Model;
 
-use Zizaco\Entrust\EntrustPermission;
+use Laratrust\Models\LaratrustPermission;
 
 /**
  * App\Model\Permission
@@ -26,11 +26,9 @@ use Zizaco\Entrust\EntrustPermission;
  * @method static \Illuminate\Database\Query\Builder|\App\Model\Permission whereCreatedAt($value)
  * @method static \Illuminate\Database\Query\Builder|\App\Model\Permission whereUpdatedAt($value)
  * @mixin \Eloquent
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Model\Role[] $roles
  */
-class Permission extends EntrustPermission
+class Permission extends LaratrustPermission
 {
-    public function roles()
-    {
-        $this->belongsToMany('App\Model\Role', 'permission_role', 'permission_id', 'role_id');
-    }
+    //
 }

@@ -8,6 +8,7 @@
 
 namespace App\Http\Controllers;
 
+use Config;
 use Validator;
 use Illuminate\Http\Request;
 
@@ -23,7 +24,7 @@ class UnitController extends Controller
 
     public function index()
     {
-        $unitlist = Unit::paginate(10);
+        $unitlist = Unit::paginate(Config::get('const.PAGINATION'));
 
         return view('unit.index')->with('unitlist', $unitlist);
     }
@@ -37,7 +38,7 @@ class UnitController extends Controller
 
     public function create()
     {
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         return view('unit.create', compact('statusDDL'));
     }
@@ -48,27 +49,23 @@ class UnitController extends Controller
             'name' => 'required|string|max:255',
             'symbol' => 'required|string|max:255',
             'status' => 'required|string|max:255',
+        ])->validate();
+        
+        Unit::create([
+            'name' => $data['name'],
+            'symbol' => $data['symbol'],
+            'status' => $data['status'],
+            'remarks' => $data['remarks'],
         ]);
 
-        if ($validator->fails()) {
-            return redirect(route('db.admin.unit.create'))->withInput()->withErrors($validator);
-        } else {
-            Unit::create([
-                'name' => $data['name'],
-                'symbol' => $data['symbol'],
-                'status' => $data['status'],
-                'remarks' => $data['remarks'],
-            ]);
-
-            return redirect(route('db.admin.unit'));
-        }
+        return response()->json();
     }
 
     public function edit($id)
     {
         $unit = Unit::find($id);
 
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         return view('unit.edit', compact('unit', 'statusDDL'));
     }
@@ -79,14 +76,11 @@ class UnitController extends Controller
             'name' => 'required|string|max:255',
             'symbol' => 'required|string|max:255',
             'status' => 'required|string|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect(route('db.admin.unit.edit'))->withInput()->withErrors($validator);
-        } else {
-            Unit::find($id)->update($req->all());
-            return redirect(route('db.admin.unit'));
-        }
+        ])->validate();
+        
+        Unit::find($id)->update($req->all());
+        
+        return response()->json();
     }
 
     public function delete($id)

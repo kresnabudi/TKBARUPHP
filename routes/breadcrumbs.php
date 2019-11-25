@@ -10,6 +10,16 @@ Breadcrumbs::register('dashboard', function ($breadcrumbs){
     $breadcrumbs->push(trans('breadcrumb.dashboard'), route('db'));
 });
 
+Breadcrumbs::register('daily_log', function ($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.daily_log'), route('db.daily_log'));
+});
+
+Breadcrumbs::register('search', function ($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.search'), route('db.search'));
+});
+
 Breadcrumbs::register('create_purchase_order', function ($breadcrumbs){
     $breadcrumbs->parent('dashboard');
     $breadcrumbs->push(trans('breadcrumb.po.create'), route('db.po.create'));
@@ -55,6 +65,81 @@ Breadcrumbs::register('purchase_order_copy', function ($breadcrumbs){
     $breadcrumbs->push(trans('breadcrumb.po.copy'), route('db.po.copy'));
 });
 
+Breadcrumbs::register('purchase_order_copy_create', function ($breadcrumbs, $poId){
+    $breadcrumbs->parent('purchase_order_copy');
+    $breadcrumbs->push(trans('breadcrumb.po.copy.create'), route('db.po.copy.create', $poId));
+});
+
+Breadcrumbs::register('purchase_order_copy_edit', function ($breadcrumbs, $poCode, $poCopyId){
+    $breadcrumbs->parent('purchase_order_copy');
+    $breadcrumbs->push(trans('breadcrumb.po.copy.edit'), route('db.po.copy.edit', [$poCode, $poCopyId]));
+});
+
+Breadcrumbs::register('price_level_index', function ($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.price_level.index'), route('db.price.price_level'));
+});
+
+Breadcrumbs::register('price_level_create', function ($breadcrumbs){
+    $breadcrumbs->parent('price_level_index');
+    $breadcrumbs->push(trans('breadcrumb.price_level.create'), route('db.price.price_level.create'));
+});
+
+Breadcrumbs::register('price_level_edit', function ($breadcrumbs, $id){
+    $breadcrumbs->parent('price_level_index');
+    $breadcrumbs->push(trans('breadcrumb.price_level.edit'), route('db.price.price_level.edit', $id));
+});
+
+Breadcrumbs::register('price_level_show', function ($breadcrumbs, $id){
+    $breadcrumbs->parent('price_level_index');
+    $breadcrumbs->push(trans('breadcrumb.price_level.show'), route('db.price.price_level.show', $id));
+});
+
+Breadcrumbs::register('price_level_today_price', function ($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.price_level.today_price'), route('db.price.today'));
+});
+
+Breadcrumbs::register('price_level_today_price_update_byitem', function ($breadcrumbs, $id){
+    $breadcrumbs->parent('price_level_today_price');
+    $breadcrumbs->push(trans('breadcrumb.price_level.today_price.update.byitem'), route('db.price.stock', $id));
+});
+
+Breadcrumbs::register('price_level_today_price_update_bycat', function ($breadcrumbs, $id){
+    $breadcrumbs->parent('price_level_today_price');
+    $breadcrumbs->push(trans('breadcrumb.price_level.today_price.update.bycat'), route('db.price.category', $id));
+});
+
+Breadcrumbs::register('bank_upload', function ($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.bank.upload'), route('db.bank.upload'));
+});
+
+Breadcrumbs::register('bank_consolidate', function ($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.bank.consolidate'), route('db.bank.upload'));
+});
+
+Breadcrumbs::register('bank_giro_index', function($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.bank.giro.index'), route('db.bank.giro'));
+});
+
+Breadcrumbs::register('bank_giro_create', function($breadcrumbs){
+    $breadcrumbs->parent('bank_giro_index');
+    $breadcrumbs->push(trans('breadcrumb.bank.giro.create'), route('db.bank.giro.create'));
+});
+
+Breadcrumbs::register('bank_giro_show', function($breadcrumbs, $id){
+    $breadcrumbs->parent('bank_giro_index');
+    $breadcrumbs->push(trans('breadcrumb.bank.giro.show'), route('db.bank.giro.show', $id));
+});
+
+Breadcrumbs::register('bank_giro_edit', function($breadcrumbs, $id){
+    $breadcrumbs->parent('bank_giro_index');
+    $breadcrumbs->push(trans('breadcrumb.bank.giro.edit'), route('db.bank.giro.edit', $id));
+});
+
 Breadcrumbs::register('inflow', function ($breadcrumbs){
     $breadcrumbs->parent('dashboard');
     $breadcrumbs->push(trans('breadcrumb.warehouse.inflow.index'), route('db.warehouse.inflow.index'));
@@ -68,6 +153,41 @@ Breadcrumbs::register('receipt', function ($breadcrumbs, $poId){
 Breadcrumbs::register('outflow', function ($breadcrumbs){
     $breadcrumbs->parent('dashboard');
     $breadcrumbs->push(trans('breadcrumb.warehouse.outflow.index'), route('db.warehouse.outflow.index'));
+});
+
+Breadcrumbs::register('stockopname_index', function ($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.warehouse.stockopname.index'), route('db.warehouse.stockopname.index'));
+});
+
+Breadcrumbs::register('stockopname_adjust', function ($breadcrumbs, $stock){
+    $breadcrumbs->parent('stockopname_index');
+    $breadcrumbs->push($stock->product->name, route('db.warehouse.stockopname.index'));
+});
+
+Breadcrumbs::register('transferstock_index', function ($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.warehouse.transferstock.index'), route('db.warehouse.transfer_stock.index'));
+});
+
+Breadcrumbs::register('transferstock_create', function ($breadcrumbs){
+    $breadcrumbs->parent('transferstock_index');
+    $breadcrumbs->push(trans('breadcrumb.warehouse.transferstock.create'), route('db.warehouse.transfer_stock.transfer'));
+});
+
+Breadcrumbs::register('stockmerger_index', function ($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.warehouse.stockmerger.index'), route('db.warehouse.stock_merger.index'));
+});
+
+Breadcrumbs::register('stockmerger_create', function ($breadcrumbs){
+    $breadcrumbs->parent('stockmerger_index');
+    $breadcrumbs->push(trans('breadcrumb.warehouse.stockmerger.create'), route('db.warehouse.stock_merger.create'));
+});
+
+Breadcrumbs::register('stockmerger_show', function ($breadcrumbs, $id){
+    $breadcrumbs->parent('stockmerger_index');
+    $breadcrumbs->push(trans('breadcrumb.warehouse.stockmerger.show'), route('db.warehouse.stock_merger.show', $id));
 });
 
 Breadcrumbs::register('deliver', function ($breadcrumbs, $soId){
@@ -429,6 +549,7 @@ Breadcrumbs::register('employee_salary.employee_show', function($breadcrumbs, $i
     $breadcrumbs->parent('dashboard');
     $breadcrumbs->push(trans('breadcrumb.employee.employee.show'), route('db.employee.employee.show', $id));
 });
+
 Breadcrumbs::register('employee.employee', function($breadcrumbs){
     $breadcrumbs->parent('dashboard');
     $breadcrumbs->push(trans('breadcrumb.employee.employee'), route('db.employee.employee'));
@@ -459,9 +580,14 @@ Breadcrumbs::register('customer_confirmation_confirm', function($breadcrumbs, $i
     $breadcrumbs->push(trans('breadcrumb.customer.confirmation.confirm'), route('db.customer.confirmation.confirm', $id));
 });
 
-Breadcrumbs::register('customer.approval', function($breadcrumbs){
+Breadcrumbs::register('customer_approval', function($breadcrumbs){
     $breadcrumbs->parent('dashboard');
-    $breadcrumbs->push(trans('breadcrumb.customer.approval'), route('db.customer.approval'));
+    $breadcrumbs->push(trans('breadcrumb.customer.approval'), route('db.customer.approval.index'));
+});
+
+Breadcrumbs::register('customer_payment', function($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.customer.payment'), route('db.customer.payment.index'));
 });
 
 Breadcrumbs::register('user_profile', function($breadcrumbs, $id){
@@ -474,8 +600,53 @@ Breadcrumbs::register('user_settings', function($breadcrumbs, $id){
     $breadcrumbs->push(trans('breadcrumb.user.settings'), route('db.user.settings.show', $id));
 });
 
-Breadcrumbs::register('user_calendar', function($breadcrumbs){
+Breadcrumbs::register('user_calendar', function($breadcrumbs, $id){
     $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.user.profile'), route('db.user.profile.show', $id));
     $breadcrumbs->push(trans('breadcrumb.user.calendar'), route('db.user.calendar.show'));
 });
 
+Breadcrumbs::register('tax_invoice_output', function($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.tax.invoice.output'), route('db.tax.invoice.output.index'));
+});
+
+Breadcrumbs::register('create_tax_invoice_output', function($breadcrumbs){
+    $breadcrumbs->parent('tax_invoice_output');
+    $breadcrumbs->push(trans('breadcrumb.tax.invoice.output.create'), route('db.tax.invoice.output.create'));
+});
+
+Breadcrumbs::register('show_tax_invoice_output', function($breadcrumbs, $id){
+    $breadcrumbs->parent('tax_invoice_output');
+    $breadcrumbs->push(trans('breadcrumb.tax.invoice.output.show'), route('db.tax.invoice.output.show', $id));
+});
+
+Breadcrumbs::register('edit_tax_invoice_output', function($breadcrumbs, $id){
+    $breadcrumbs->parent('tax_invoice_output');
+    $breadcrumbs->push(trans('breadcrumb.tax.invoice.output.edit'), route('db.tax.invoice.output.edit', $id));
+});
+
+Breadcrumbs::register('tax_invoice_input', function($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.tax.invoice.input'), route('db.tax.invoice.input.index'));
+});
+
+Breadcrumbs::register('create_tax_invoice_input', function($breadcrumbs){
+    $breadcrumbs->parent('tax_invoice_input');
+    $breadcrumbs->push(trans('breadcrumb.tax.invoice.input.create'), route('db.tax.invoice.input.create'));
+});
+
+Breadcrumbs::register('show_tax_invoice_input', function($breadcrumbs, $id){
+    $breadcrumbs->parent('tax_invoice_input');
+    $breadcrumbs->push(trans('breadcrumb.tax.invoice.input.show'), route('db.tax.invoice.input.show', $id));
+});
+
+Breadcrumbs::register('edit_tax_invoice_input', function($breadcrumbs, $id){
+    $breadcrumbs->parent('tax_invoice_input');
+    $breadcrumbs->push(trans('breadcrumb.tax.invoice.input.edit'), route('db.tax.invoice.input.edit', $id));
+});
+
+Breadcrumbs::register('tax_generate', function($breadcrumbs){
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('breadcrumb.tax.generate'), route('db.tax.generate'));
+});

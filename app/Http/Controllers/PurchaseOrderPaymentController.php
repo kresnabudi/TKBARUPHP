@@ -12,6 +12,7 @@ use App\Services\PurchaseOrderService;
 
 use App\Repos\LookupRepo;
 
+use Config;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -29,14 +30,24 @@ class PurchaseOrderPaymentController extends Controller
         $this->middleware('auth');
     }
 
-    public function paymentIndex()
+    public function paymentIndex(Request $request)
     {
         Log::info('[PurchaseOrderController@paymentIndex]');
 
-        $purchaseOrders = PurchaseOrder::with('supplier')->where('status', '=', 'POSTATUS.WP')->paginate(10);
+        $searchCode = '';
+        if(!empty($request->query('c'))){
+            $purchaseOrders = PurchaseOrder::with('supplier')
+                ->where('status', '=', 'POSTATUS.WP')
+                ->where('code', '=', $request->query('c'))->paginate(Config::get('const.PAGINATION'));
+            $searchCode = $request->query('c');
+        } else {
+            $purchaseOrders = PurchaseOrder::with('supplier')->where('status', '=', 'POSTATUS.WP')
+                ->paginate(Config::get('const.PAGINATION'));
+        }
+
         $poStatusDDL = LookupRepo::findByCategory('POSTATUS')->pluck('description', 'code');
 
-        return view('purchase_order.payment.payment_index', compact('purchaseOrders', 'poStatusDDL'));
+        return view('purchase_order.payment.payment_index', compact('purchaseOrders', 'poStatusDDL', 'searchCode'));
     }
 
     public function paymentHistory($id){
@@ -75,7 +86,9 @@ class PurchaseOrderPaymentController extends Controller
 
         $this->paymentService->createCashPayment($currentPo, $paymentDate, $paymentAmount);
 
-        return redirect(route('db.po.payment.index'));
+        $this->purchaseOrderService->updatePOStatus($currentPo, $paymentAmount);
+
+        return response()->json();
     }
 
     public function createTransferPayment($id)
@@ -106,7 +119,7 @@ class PurchaseOrderPaymentController extends Controller
 
         $currentPo->payments()->save($payment);
 
-        return redirect(route('db.po.payment.index'));
+        return response()->json();
     }
 
     public function createGiroPayment($id)
@@ -141,6 +154,6 @@ class PurchaseOrderPaymentController extends Controller
 
         $currentPo->payments()->save($payment);
 
-        return redirect(route('db.po.payment.index'));
+        return response()->json();
     }
 }

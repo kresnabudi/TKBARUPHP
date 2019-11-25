@@ -25,4 +25,52 @@ class ReportServiceImpl implements ReportService
             }
         }
     }
+
+    public function getTodayPriceList(
+        $productCategories, $priceLevels, $selectedPriceLevel = null, $selectedDate = null)
+    {
+        $result = [];
+
+        foreach ($productCategories as $pc) {
+            foreach ($pc->stocks as $stock) {
+                foreach ($stock->latestPrices() as $price) {
+                    if ($selectedPriceLevel != null) {
+                        if ($price->price_level_id != $selectedPriceLevel) continue;
+
+                        array_push($result, [
+                            'product_category_name' => $pc->name,
+                            'product_name' => $stock->product->name,
+                            'price' => $price->priceLevel->name.' - '.$price->price
+                        ]);
+                    } else {
+                        array_push($result, [
+                            'product_category_name' => $pc->name,
+                            'product_name' => $stock->product->name,
+                            'price' => $price->priceLevel->name.' - '.$price->price
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    public function getStockList($stockList)
+    {
+        $result = [];
+
+        foreach($stockList as $s) {
+            if ($s['current_quantity'] > 0) {
+                array_push($result, [
+                    'warehouse' => $s['warehouse']['name'],
+                    'product_type' => $s['product']['type']['name'],
+                    'product' => $s['product']['name'],
+                    'quantity' => $s['current_quantity']
+                ]);
+            }
+        }
+
+        return $result;
+    }
 };

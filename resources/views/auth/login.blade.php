@@ -7,8 +7,14 @@
 
     <div class="login-box animated slideInUp">
         <div class="login-logo">
-            <a href="#"></a>
+            <a href="/front"><img src="{{ asset('/images/loginlogo_notext.png') }}" width="88" height="80"/></a>
         </div>
+
+        @if(session('success'))
+            <div class="alert alert-success text-center">
+                {{ session('success') }}
+            </div>
+        @endif
 
         <div class="login-box-body">
             <p class="login-box-msg">@lang('login.title')</p>
@@ -40,22 +46,38 @@
                         </div>
                     </div>
                     <div class="col-xs-4">
+                        &nbsp;
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
                         <button type="submit" class="btn btn-primary btn-block btn-flat">@lang('buttons.login_button')</button>
                     </div>
                 </div>
             </form>
-            <hr/>
-
-            <a href="/register" class="text-center">@lang('login.register.new')</a>
-
+            <hr class="strong-line">
+            <div class="btn-group btn-group-justified">
+                <a href="/register" class="btn btn-xs btn-primary btn-block btn-flat">@lang('login.register.new')</a>
+            </div>
+            <br>
+            <div class="btn-group btn-group-justified">
+                <a href="/forgot" class="btn btn-xs btn-default btn-block btn-flat">@lang('login.forgot_pass')</a></div>
+            </div>
         </div>
-        <div class="pull-right"><a href="/forgot">@lang('login.forgot_pass')</a></div>
     </div>
 
-    <script type="application/javascript" src="{{ asset('adminlte/js/app.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/js/adminlte.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/parsley.config.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/parsley.min.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/id.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/id.extra.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/en.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/en.extra.js') }}"></script>
 
     <script type="text/javascript">
         $(document).ready(function () {
+            window.Parsley.setLocale('{!! LaravelLocalization::getCurrentLocale() !!}');
+
             $('input.is_icheck').iCheck({
                 checkboxClass: 'icheckbox_square-blue',
                 radioClass: 'iradio_square-blue',

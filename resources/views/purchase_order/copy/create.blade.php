@@ -13,22 +13,21 @@
 @endsection
 
 @section('breadcrumbs')
+    {!! Breadcrumbs::render('purchase_order_copy_create', $poToBeCopied->hId()) !!}
 @endsection
 
 @section('content')
-    @if (count($errors) > 0)
-        <div class="alert alert-danger">
-            <strong>@lang('labels.GENERAL_ERROR_TITLE')</strong> @lang('labels.GENERAL_ERROR_DESC')<br><br>
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     <div id="poCopyVue">
-        {!! Form::model($poToBeCopied, ['method' => 'POST', 'route' => ['db.po.copy.create', $poCode], 'class' => 'form-horizontal', 'data-parsley-validate' => 'parsley']) !!}
+        <div v-show="errors.count() > 0" v-cloak>
+            <div class="alert alert-danger">
+                <strong>@lang('labels.GENERAL_ERROR_TITLE')</strong> @lang('labels.GENERAL_ERROR_DESC')<br><br>
+                <ul v-for="(e, eIdx) in errors.all()">
+                    <li>@{{ e }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <form id="poCopyForm" class="form-horizontal" v-on:submit.prevent="validateBeforeSubmit()">
             {{ csrf_field() }}
             <div class="row">
                 <div class="col-md-6">
@@ -116,8 +115,7 @@
                                         <div class="input-group-addon">
                                             <i class="fa fa-calendar"></i>
                                         </div>
-                                        <input type="text" class="form-control" readonly
-                                               value="{{ $poToBeCopied->po_created->format('d-m-Y') }}">
+                                        <vue-datetimepicker id="inputPoDate" name="createdDate" value="" v-model="po.po_created" v-validate="'required'" format="DD-MM-YYYY hh:mm A" readonly="true"></vue-datetimepicker>
                                     </div>
                                 </div>
                             </div>
@@ -140,9 +138,7 @@
                                         <div class="input-group-addon">
                                             <i class="fa fa-calendar"></i>
                                         </div>
-                                        <input type="text" class="form-control" name="shipping_date" readonly
-                                               value="{{ $poToBeCopied->shipping_date->format('d-m-Y') }}"
-                                               data-parsley-required="true">
+                                        <vue-datetimepicker id="inputShippingDate" name="shipping_date" value="{{ $poToBeCopied->shipping_date->format('d-m-Y') }}" v-model="po.shipping_date" v-validate="'required'" format="DD-MM-YYYY hh:mm A" readonly="true"></vue-datetimepicker>
                                     </div>
                                 </div>
                             </div>
@@ -200,54 +196,52 @@
                                 <div class="col-md-12">
                                     <table id="itemsListTable" class="table table-bordered table-hover">
                                         <thead>
-                                        <tr>
-                                            <th width="30%">@lang('purchase_order.copy.create.table.item.header.product_name')</th>
-                                            <th width="15%"
-                                                class="text-center">@lang('purchase_order.copy.create.table.item.header.quantity')</th>
-                                            <th width="15%"
-                                                class="text-center">@lang('purchase_order.copy.create.table.item.header.unit')</th>
-                                            <th width="15%"
-                                                class="text-center">@lang('purchase_order.copy.create.table.item.header.price_unit')</th>
-                                            <th width="5%">&nbsp;</th>
-                                            <th width="20%"
-                                                class="text-center">@lang('purchase_order.revise.table.item.header.total_price')</th>
-                                        </tr>
+                                            <tr>
+                                                <th width="30%">@lang('purchase_order.copy.create.table.item.header.product_name')</th>
+                                                <th width="15%"
+                                                    class="text-center">@lang('purchase_order.copy.create.table.item.header.quantity')</th>
+                                                <th width="15%"
+                                                    class="text-center">@lang('purchase_order.copy.create.table.item.header.unit')</th>
+                                                <th width="15%"
+                                                    class="text-center">@lang('purchase_order.copy.create.table.item.header.price_unit')</th>
+                                                <th width="5%">&nbsp;</th>
+                                                <th width="20%"
+                                                    class="text-center">@lang('purchase_order.revise.table.item.header.total_price')</th>
+                                            </tr>
                                         </thead>
                                         <tbody>
-                                        <template v-for="(item, itemIndex) in po.items">
-                                            <tr>
-                                                <input type="hidden" name="product_id[]" v-bind:value="item.product.id">
-                                                <input type="hidden" name="base_unit_id[]" v-bind:value="item.base_unit.unit.id">
-                                                <td class="valign-middle">@{{ item.product.name }}</td>
-                                                <td>
-                                                    <input type="text" class="form-control text-right"
-                                                           data-parsley-required="true" data-parsley-type="number"
-                                                           name="quantity[]" v-model="item.quantity">
-                                                </td>
-                                                <td>
-                                                    <input type="hidden" name="selected_unit_id[]" v-bind:value="item.selected_unit.unit.id">
-                                                    <select class="form-control"
-                                                            data-parsley-required="true"
-                                                            v-model="item.selected_unit">
-                                                        <option v-bind:value="{unit: {id: ''}, conversion_value: 1}">@lang('labels.PLEASE_SELECT')</option>
-                                                        <option v-for="product_unit in item.product.product_units" v-bind:value="product_unit">@{{ product_unit.unit.name + ' (' + product_unit.unit.symbol + ')' }}</option>
-                                                    </select>
-                                                </td>
-                                                <td>
-                                                    <input type="text" class="form-control text-right" name="price[]"
-                                                           v-model="item.price" data-parsley-required="true"
-                                                           data-parsley-pattern="^(?!0\.00)\d{1,3}(,\d{3})*(\.\d\d)?$">
-                                                </td>
-                                                <td class="text-center">
-                                                    <button type="button" class="btn btn-danger btn-md"
-                                                            v-on:click="removeItem(itemIndex)"><span class="fa fa-minus"/>
-                                                    </button>
-                                                </td>
-                                                <td class="text-right valign-middle">
-                                                    @{{ item.selected_unit.conversion_value * item.quantity * item.price }}
-                                                </td>
-                                            </tr>
-                                        </template>
+                                            <template v-for="(item, itemIndex) in po.items">
+                                                <tr>
+                                                    <input type="hidden" name="product_id[]" v-bind:value="item.product.id">
+                                                    <input type="hidden" name="base_unit_id[]" v-bind:value="item.base_unit.unit.id">
+                                                    <td class="valign-middle">@{{ item.product.name }}</td>
+                                                    <td>
+                                                        <input type="text" class="form-control text-right" name="quantity[]" v-model="item.quantity">
+                                                    </td>
+                                                    <td>
+                                                        <select class="form-control"
+                                                                name="selected_unit_id[]"
+                                                                v-validate="'required'"
+                                                                data-vv-as="{{ trans('purchase_order.copy.create.table.item.header.unit') }}"
+                                                                v-model="item.selected_unit.id">
+                                                            <option v-bind:value="defaultProductUnit.id">@lang('labels.PLEASE_SELECT')</option>
+                                                            <option v-for="product_unit in item.product.product_units" v-bind:value="product_unit.id">@{{ product_unit.unit.name + ' (' + product_unit.unit.symbol + ')' }}</option>
+                                                        </select>
+                                                    </td>
+                                                    <td>
+                                                        <input type="text" class="form-control text-right" name="price[]"
+                                                               v-model="item.price" v-validate="'required|decimal:2'">
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button type="button" class="btn btn-danger btn-md"
+                                                                v-on:click="removeItem(itemIndex)"><span class="fa fa-minus"/>
+                                                        </button>
+                                                    </td>
+                                                    <td class="text-right valign-middle">
+                                                        @{{ numbro(item.selected_unit.conversion_value * item.quantity * item.price).format() }}
+                                                    </td>
+                                                </tr>
+                                            </template>
                                         </tbody>
                                     </table>
                                 </div>
@@ -260,7 +254,7 @@
                                             <td width="80%"
                                                 class="text-right">@lang('purchase_order.copy.create.table.total.body.total')</td>
                                             <td width="20%" class="text-right">
-                                                <span class="control-label-normal">@{{ grandTotal() }}</span>
+                                                <span class="control-label-normal">@{{ numbro(grandTotal()).format() }}</span>
                                             </td>
                                         </tr>
                                         </tbody>
@@ -296,8 +290,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <div class="col-sm-12">
-                                            <textarea id="inputPoRemarks" class="form-control"
-                                                      rows="5" readonly>{{ $poToBeCopied->remarks }}</textarea>
+                                            <textarea id="inputPoRemarks" class="form-control" rows="5" readonly>{{ $poToBeCopied->remarks }}</textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -317,8 +310,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <div class="col-sm-12">
-                                            <textarea id="inputPoCopyRemarks" name="remarks" class="form-control"
-                                                      rows="5"></textarea>
+                                            <textarea id="inputPoCopyRemarks" name="remarks" class="form-control" rows="5"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -340,7 +332,7 @@
                     </div>
                 </div>
             </div>
-        {!! Form::close() !!}
+        </form>
 
         @include('purchase_order.supplier_details_partial')
     </div>
@@ -348,86 +340,100 @@
 
 @section('custom_js')
     <script type="application/javascript">
-        $(document).ready(function () {
-            var currentPo = JSON.parse('{!! htmlspecialchars_decode($poToBeCopied->toJson()) !!}');
-
-            var poApp = new Vue({
-                el: '#poCopyVue',
-                data: {
-                    productDDL: JSON.parse('{!! htmlspecialchars_decode($productDDL) !!}'),
-                    po: {
-                        supplier: currentPo.supplier ? _.cloneDeep(currentPo.supplier) : {id: ''},
-                        items: [],
-                        product: {
-                            id: ''
-                        }
+        var poApp = new Vue({
+            el: '#poCopyVue',
+            data: {
+                currentPo: JSON.parse('{!! htmlspecialchars_decode($poToBeCopied->toJson()) !!}'),
+                productDDL: JSON.parse('{!! htmlspecialchars_decode($productDDL) !!}'),
+                po: {
+                    supplier: '',
+                    items: [],
+                    product: {
+                        id: ''
                     }
-                },
-                mounted: function() {
+                }
+            },
+            mounted: function() {
+                var vm = this;
+
+                this.po.supplier = _.cloneDeep(this.currentPo.supplier);
+
+                for (var i = 0; i < this.currentPo.items.length; i++) {
+                    vm.po.items.push({
+                        id: this.currentPo.items[i].id,
+                        product: _.cloneDeep(this.currentPo.items[i].product),
+                        base_unit: _.cloneDeep(_.find(this.currentPo.items[i].product.product_units, function(unit) { return unit.is_base == 1; })),
+                        selected_unit: _.cloneDeep(_.find(this.currentPo.items[i].product.product_units, function(punit) { return punit.id == vm.currentPo.items[i].selected_unit_id; })),
+                        quantity: parseFloat(this.currentPo.items[i].quantity).toFixed(0),
+                        price: parseFloat(this.currentPo.items[i].price).toFixed(0)
+                    });
+                }
+            },
+            methods: {
+                validateBeforeSubmit: function() {
                     var vm = this;
-                    for (var i = 0; i < currentPo.items.length; i++) {
-                        vm.po.items.push({
-                            id: currentPo.items[i].id,
-                            product: _.cloneDeep(currentPo.items[i].product),
-                            base_unit: _.cloneDeep(_.find(currentPo.items[i].product.product_units, isBase)),
-                            selected_unit: _.cloneDeep(_.find(currentPo.items[i].product.product_units, getSelectedUnit(currentPo.items[i].selected_unit_id))),
-                            quantity: parseFloat(currentPo.items[i].quantity).toFixed(0),
-                            price: parseFloat(currentPo.items[i].price).toFixed(0)
+                    this.$validator.validateAll().then(function(isValid) {
+                        if (!isValid) return;
+                        $('#loader-container').fadeIn('fast');
+                        axios.post('{{ route('api.post.db.po.copy.create', $poCode) }}' + '?api_token=' + $('#secapi').val(), new FormData($('#poCopyForm')[0]))
+                            .then(function(response) {
+                                window.location.href = '{{ route('db.po.copy.index', $poCode) }}';
+                        }).catch(function(e) {
+                            $('#loader-container').fadeOut('fast');
+                            if (e.response.data.errors != undefined && Object.keys(e.response.data.errors).length > 0) {
+                                for (var key in e.response.data.errors) {
+                                    for (var i = 0; i < e.response.data.errors[key].length; i++) {
+                                        vm.$validator.errors.add('', e.response.data.errors[key][i], 'server', '__global__');
+                                    }
+                                }
+                            } else {
+                                vm.$validator.errors.add('', e.response.status + ' ' + e.response.statusText, 'server', '__global__');
+                                if (e.response.data.message != undefined) { console.log(e.response.data.message); }
+                            }
                         });
-                    }
-
-                    $('input[type="checkbox"], input[type="radio"]').iCheck({
-                        checkboxClass: 'icheckbox_square-blue',
-                        radioClass: 'iradio_square-blue'
-                    });
-
-                    $("#inputShippingDate").datetimepicker({
-                        format: "DD-MM-YYYY hh:mm A",
-                        defaultDate: moment()
                     });
                 },
-                methods: {
-                    grandTotal: function () {
+                grandTotal: function () {
+                    var vm = this;
+                    var result = 0;
+                    _.forEach(vm.po.items, function (item, key) {
+                        result += (item.selected_unit.conversion_value * item.quantity * item.price);
+                    });
+                    return result;
+                },
+                insertItem: function (product) {
+                    if(product.id != ''){
                         var vm = this;
-                        var result = 0;
-                        _.forEach(vm.po.items, function (item, key) {
-                            result += (item.selected_unit.conversion_value * item.quantity * item.price);
-                        });
-                        return result;
-                    },
-                    insertItem: function (product) {
-                        if(product.id != ''){
-                            var vm = this;
-                            vm.po.items.push({
-                                id: null,
-                                product: _.cloneDeep(product),
-                                base_unit: _.cloneDeep(_.find(product.product_units, isBase)),
-                                selected_unit: {
-                                    unit: {
-                                        id: ''
-                                    },
-                                    conversion_value: 1
+                        vm.po.items.push({
+                            id: null,
+                            product: _.cloneDeep(product),
+                            base_unit: _.cloneDeep(_.find(product.product_units, isBase)),
+                            selected_unit: {
+                                unit: {
+                                    id: ''
                                 },
-                                quantity: 0,
-                                price: 0
-                            });
-                        }
-                    },
-                    removeItem: function (index) {
-                        var vm = this;
-                        vm.po.items.splice(index, 1);
+                                conversion_value: 1
+                            },
+                            quantity: 0,
+                            price: 0
+                        });
                     }
+                },
+                removeItem: function (index) {
+                    var vm = this;
+                    vm.po.items.splice(index, 1);
                 }
-            });
-
-            function getSelectedUnit(selectedUnitId) {
-                return function (element) {
-                    return element.unit_id == selectedUnitId;
+            },
+            computed: {
+                defaultProductUnit: function() {
+                    return {
+                        id: '',
+                        unit: {
+                            id: ''
+                        },
+                        conversion_value: 1
+                    };
                 }
-            }
-
-            function isBase(unit) {
-                return unit.is_base == 1;
             }
         });
     </script>

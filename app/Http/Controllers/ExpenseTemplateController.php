@@ -6,6 +6,7 @@ use App\Model\ExpenseTemplate;
 
 use App\Repos\LookupRepo;
 
+use Config;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -18,14 +19,14 @@ class ExpenseTemplateController extends Controller
 
     public function index()
     {
-        $expenseTemplates = ExpenseTemplate::paginate(10);
+        $expenseTemplates = ExpenseTemplate::paginate(Config::get('const.PAGINATION'));
 
         return view('expense_template.index', compact('expenseTemplates'));
     }
 
     public function create()
     {
-        $expenseTypes = LookupRepo::findByCategory('EXPENSETYPE')->pluck('description', 'code');
+        $expenseTypes = LookupRepo::findByCategory('EXPENSETYPE')->pluck('i18nDescription', 'code');
 
         return view('expense_template.create', compact('expenseTypes'));
     }
@@ -33,6 +34,13 @@ class ExpenseTemplateController extends Controller
     public function store(Request $request)
     {
         Log::info($request);
+
+        $validator = $this->validate($request, [
+            'name' => 'required|max:255',
+            'type' => 'required|max:255',
+            'amount' => 'required|max:255',
+            'remarks' => 'required',
+        ]);
 
         ExpenseTemplate::create([
             'name' => $request->input('name'),
@@ -42,7 +50,7 @@ class ExpenseTemplateController extends Controller
             'is_internal_expense' => $request->has('is_internal_expense') ? true : false
         ]);
 
-        return redirect(route('db.master.expense_template'));
+        return response()->json();
     }
 
     public function show($id)
@@ -56,13 +64,20 @@ class ExpenseTemplateController extends Controller
     {
         $expenseTemplate = ExpenseTemplate::find($id);
 
-        $expenseTypes = LookupRepo::findByCategory('EXPENSETYPE')->pluck('description', 'code');
+        $expenseTypes = LookupRepo::findByCategory('EXPENSETYPE')->pluck('i18nDescription', 'code');
 
         return view('expense_template.edit', compact('expenseTemplate', 'expenseTypes'));
     }
 
     public function update($id, Request $request)
     {
+        $validator = $this->validate($request, [
+            'name' => 'required|max:255',
+            'type' => 'required|max:255',
+            'amount' => 'required|max:255',
+            'remarks' => 'required',
+        ]);
+
         $expenseTemplate = ExpenseTemplate::find($id);
 
         $expenseTemplate->name = $request->input('name');
@@ -72,8 +87,8 @@ class ExpenseTemplateController extends Controller
         $expenseTemplate->is_internal_expense = $request->has('is_internal_expense') ? true : false;
 
         $expenseTemplate->save();
-
-        return redirect(route('db.master.expense_template'));
+        
+        return response()->json();
     }
 
     public function delete($id)

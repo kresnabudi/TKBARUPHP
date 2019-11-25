@@ -16,10 +16,13 @@ use App\Services\Implementation\SettingServiceImpl;
 use App\Services\Implementation\StockServiceImpl;
 use App\Services\Implementation\StoreServiceImpl;
 use App\Services\Implementation\SupplierServiceImpl;
+use App\Services\Implementation\TaxInvoiceInputServiceImpl;
+use App\Services\Implementation\TaxInvoiceOutputServiceImpl;
 use App\Services\Implementation\VendorTruckingServiceImpl;
 use App\Services\Implementation\WarehouseServiceImpl;
 use App\Services\Implementation\DatabaseServiceImpl;
 use App\Services\Implementation\AccountingServiceImpl;
+use App\Services\Implementation\StockTransferServiceImpl;
 
 use App\Services\CustomerService;
 use App\Services\GiroService;
@@ -35,10 +38,13 @@ use App\Services\SettingService;
 use App\Services\StockService;
 use App\Services\StoreService;
 use App\Services\SupplierService;
+use App\Services\TaxInvoiceInputService;
+use App\Services\TaxInvoiceOutputService;
 use App\Services\VendorTruckingService;
 use App\Services\WarehouseService;
 use App\Services\DatabaseService;
 use App\Services\AccountingService;
+use App\Services\StockTransferService;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -134,6 +140,18 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AccountingService::class, function (){
             return new AccountingServiceImpl();
         });
+
+        $this->app->singleton(StockTransferService::class, function (){
+            return new StockTransferServiceImpl();
+        });
+
+        $this->app->singleton(TaxInvoiceOutputService::class, function (){
+            return new TaxInvoiceOutputServiceImpl();
+        });
+
+        $this->app->singleton(TaxInvoiceInputService::class, function (){
+            return new TaxInvoiceInputServiceImpl();
+        });
     }
 
     /**
@@ -161,7 +179,10 @@ class AppServiceProvider extends ServiceProvider
             'App\Services\WarehouseService',
             'App\Services\SettingService',
             'App\Services\DatabaseService',
-            'App\Services\AccountingServie',
+            'App\Services\AccountingService',
+            'App\Services\StockTransferService',
+            'App\Services\TaxInvoiceOutputService',
+            'App\Services\TaxInvoiceInputService',
         ];
     }
 }

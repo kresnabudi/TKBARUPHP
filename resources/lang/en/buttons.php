@@ -29,4 +29,7 @@ return [
     'calculate_salary' => 'Calculate Salary',
     'update_button' => 'Update',
     'yes_button' => 'Yes',
+    'transfer' => 'Transfer',
+    'ok_button' => 'OK',
+    'resend_button' => 'Resend',
 ];

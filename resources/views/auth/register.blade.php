@@ -7,7 +7,7 @@
 
     <div class="register-box animated slideInDown">
         <div class="register-logo">
-            <a href="#"></a>
+            <a href="/front"><img src="{{ asset('/images/loginlogo_notext.png') }}" width="88" height="80"/></a>
         </div>
 
         <div class="register-box-body">
@@ -25,7 +25,6 @@
                     </div>
                     <hr>
                 @elseif ($store_mode == 'use_default')
-                    <input type="hidden" name="store_name" value="{{ $store_name }}">
                     <input type="hidden" name="store_id" value="{{ $store_id }}">
                 @elseif ($store_mode == 'store_pick')
                     <select name="picked_store_id" class="form-control">
@@ -83,8 +82,12 @@
                     </div>
                 </div>
             </form>
-            <hr/>
-            <a href="/login" class="text-center">@lang('login.register.already_member')</a>
+            <hr class="strong-line">
+            <div class="row">
+                <div class="col-md-6">
+                    <a href="/login" class="btn btn-xs btn-primary btn-flat">@lang('login.register.already_member')</a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -108,7 +111,13 @@
         </div>
     </div>
 
-    <script type="application/javascript" src="{{ asset('adminlte/js/app.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/js/adminlte.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/parsley.config.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/parsley.min.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/id.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/id.extra.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/en.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/parsley/en.extra.js') }}"></script>
 
     <script>
         $(document).ready(function () {

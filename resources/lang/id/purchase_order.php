@@ -11,7 +11,7 @@ return [
                 'purchase_order_detail' => 'Detail Pembelian',
                 'shipping' => 'Pengiriman',
                 'transactions' => 'Transaksi',
-                'transaction_summary' => 'Transaksi',
+                'transaction_summary' => 'Rangkuman Transaksi',
                 'discount_transaction' => 'Diskon Transaksi',
                 'remarks' => 'Keterangan',
                 'po_copy_remarks' => 'Keterangan Duplikat',
@@ -63,7 +63,7 @@ return [
                 'purchase_order_detail' => 'Detail Pembelian',
                 'shipping' => 'Pengiriman',
                 'transactions' => 'Transaksi',
-                'transaction_summary' => 'Transaksi',
+                'transaction_summary' => 'Rangkuman Transaksi',
                 'remarks' => 'Keterangan',
                 'po_copy_remarks' => 'Duplikat Keterangan',
                 'expenses' => 'Biaya',
@@ -127,6 +127,11 @@ return [
         ],
     ],
     'revise' => [
+        'tab' => [
+            'remarks' => 'Keterangan',
+            'internal' => 'Internal',
+            'private' => 'Privat',
+        ],
         'table' => [
             'item' => [
                 'header' => [
@@ -189,7 +194,7 @@ return [
             'shipping' => 'Pengiriman',
             'transactions' => 'Transaksi',
             'expenses' => 'Biaya',
-            'transaction_summary' => 'Transaksi',
+            'transaction_summary' => 'Rangkuman Transaksi',
             'remarks' => 'Keterangan',
             'total_discount' => 'Diskon',
         ],
@@ -215,12 +220,13 @@ return [
             'purchase_order_detail' => 'Detail Pembelian',
             'shipping' => 'Pengiriman',
             'transactions' => 'Transaksi',
-            'transaction_summary' => 'Transaksi',
+            'transaction_summary' => 'Rangkuman Transaksi',
             'discount_transaction' => 'Diskon Transaksi',
             'remarks' => 'Keterangan',
             'po_copy_remarks' => 'Keterangan Duplikat',
             'expenses' => 'Biaya',
             'discount_per_item' => 'Diskon Per Item',
+            'total_discount' => '',
         ],
         'field' => [
             'supplier_type' => 'Tipe',
@@ -234,6 +240,11 @@ return [
             'warehouse' => 'Gudang',
             'vendor_trucking' => 'Layanan Angkutan',
             'po_status' => 'Status',
+        ],
+        'tab' => [
+            'remarks' => 'Keterangan',
+            'internal' => 'Internal',
+            'private' => 'Privat',
         ],
         'table' => [
             'item' => [
@@ -336,7 +347,7 @@ return [
                 'shipping' => 'Pengiriman',
                 'transactions' => 'Transaksi',
                 'expenses' => 'Biaya',
-                'transaction_summary' => 'Transaksi',
+                'transaction_summary' => 'Rangkuman Transaksi',
                 'remarks' => 'Keterangan',
                 'payment_history' => 'Catatan Pembayaran',
                 'total_discount' => 'Diskon',

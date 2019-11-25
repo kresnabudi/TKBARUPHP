@@ -57,6 +57,23 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Query\Builder|\App\Model\Customer whereDeletedAt($value)
  * @mixin \Eloquent
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Model\SalesOrder[] $sales_orders
+ * @property float $latitude
+ * @property float $longitude
+ * @property int $distance
+ * @property string $distance_text
+ * @property int $duration
+ * @property string $duration_text
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Customer whereDistance($value)
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Customer whereDistanceText($value)
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Customer whereDuration($value)
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Customer whereDurationText($value)
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Customer whereLatitude($value)
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Customer whereLongitude($value)
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Customer onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Customer withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Customer withoutTrashed()
  */
 class Customer extends Model
 {
@@ -72,6 +89,12 @@ class Customer extends Model
         'store_id',
         'name',
         'address',
+        'latitude',
+        'longitude',
+        'distance',
+        'distance_text',
+        'duration',
+        'duration_text',
         'city',
         'phone_number',
         'tax_id',

@@ -42,6 +42,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Query\Builder|\App\Model\Price whereUpdatedAt($value)
  * @method static \Illuminate\Database\Query\Builder|\App\Model\Price whereDeletedAt($value)
  * @mixin \Eloquent
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Price onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Price withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Price withoutTrashed()
+ * @property-read \App\Model\PriceLevel $priceLevel
  */
 class Price extends Model
 {
@@ -64,6 +70,11 @@ class Price extends Model
     public function hId()
     {
         return HashIds::encode($this->attributes['id']);
+    }
+
+    public function priceLevel()
+    {
+        return $this->belongsTo('App\Model\PriceLevel', 'price_level_id');
     }
 
     /**

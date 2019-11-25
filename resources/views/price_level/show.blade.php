@@ -12,6 +12,10 @@
     @lang('price_level.show.page_title_desc')
 @endsection
 
+@section('breadcrumbs')
+    {!! Breadcrumbs::render('price_level_show', $pricelevel->hId()) !!}
+@endsection
+
 @section('content')
     <div class="box box-info">
         <div class="box-header with-border">
@@ -56,7 +60,7 @@
                         <label for="inputIncVal" class="col-sm-2 control-label">@lang('price_level.field.incval')</label>
                         <div class="col-sm-10">
                             <label id="inputIncVal" class="control-label control-label-normal">
-                                <span class="control-label-normal">{{ empty($pricelevel->incval) ? 0:$pricelevel->incval }}</span>
+                                <span class="control-label-normal">{{ empty($pricelevel->increment_value) ? 0:$pricelevel->increment_value }}</span>
                             </label>
                         </div>
                     </div>
@@ -64,7 +68,7 @@
                         <label for="inputPctVal" class="col-sm-2 control-label">@lang('price_level.field.pctval')</label>
                         <div class="col-sm-10">
                             <label id="inputPctVal" class="control-label control-label-normal">
-                                <span class="control-label-normal">{{ empty($pricelevel->pctval) ? 0:$pricelevel->pctval }}</span>
+                                <span class="control-label-normal">{{ empty($pricelevel->percentage_value) ? 0:$pricelevel->percentage_value }}</span>
                             </label>
                         </div>
                     </div>

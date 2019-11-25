@@ -104,4 +104,16 @@ interface PurchaseOrderService
      * @return Collection
      */
     public function getUnreceivedPO($threshold = 3);
+
+    public function searchPO($keyword);
+
+    public function searchPOByDate($date);
+
+    public function updatePOStatus(PurchaseOrder $poData, $amount);
+
+    public function getLastPODates($limit);
+
+    public function getPOByCode($code);
+
+    public function addExpenses($poId, $expenseArr);
 }

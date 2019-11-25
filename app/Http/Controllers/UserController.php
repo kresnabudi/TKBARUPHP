@@ -9,15 +9,17 @@
 namespace App\Http\Controllers;
 
 use DB;
+use Config;
 use Session;
 use Validator;
-use App\Model\UserDetail;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 use App\User;
 use App\Model\Role;
 use App\Model\Store;
 use App\Model\Profile;
+use App\Model\UserDetail;
 use App\Repos\LookupRepo;
 
 class UserController extends Controller
@@ -29,7 +31,7 @@ class UserController extends Controller
 
     public function index()
     {
-        $user = User::paginate(10);
+        $user = User::paginate(Config::get('const.PAGINATION'));
         return view('user.index', compact('user'));
     }
 
@@ -63,37 +65,33 @@ class UserController extends Controller
             'password' => 'required|min:6|confirmed',
             'roles' => 'required',
             'store' => 'required',
-        ]);
+        ])->validate();
 
-        if ($validator->fails()) {
-            return redirect(route('db.admin.user.create'))->withInput()->withErrors($validator);
-        } else {
-            DB::transaction(function() use ($data) {
-                $usr = new User();
-                $usr->name = $data['name'];
-                $usr->email = $data['email'];
-                $usr->password = bcrypt($data['password']);
-                $usr->store_id = $data['store'];
+        DB::transaction(function() use ($data) {
+            $usr = new User();
+            $usr->name = $data['name'];
+            $usr->email = $data['email'];
+            $usr->password = bcrypt($data['password']);
+            $usr->store_id = $data['store'];
 
-                $usr->api_token = str_random(60);
+            $usr->api_token = str_random(60);
 
-                $ud = new UserDetail();
-                $ud->type = $data['type'];
-                $ud->allow_login = boolval($data['allow_login']);
+            $usr->created_at = Carbon::now();
+            $usr->updated_at = Carbon::now();
 
-                $usr->save();
-                $usr->roles()->attach(Role::whereName($data['roles'])->get());
-                if (!empty($data['link_profile'])) {
-                    $usr->profile()->save(Profile::whereId($data['link_profile'])->first());
-                }
-                $usr->userDetail()->save($ud);
-            });
+            $ud = new UserDetail();
+            $ud->type = $data['user_type'];
+            $ud->allow_login = boolval($data['allow_login']);
 
+            $usr->save();
+            $usr->roles()->attach(Role::whereName($data['roles'])->get());
+            if (!empty($data['link_profile'])) {
+                $usr->profile()->save(Profile::whereId($data['link_profile'])->first());
+            }
+            $usr->userDetail()->save($ud);
+        });
 
-            Session::flash('success', 'New User Created');
-
-            return redirect(route('db.admin.user'));
-        }
+        return response()->json();
     }
 
     public function edit($id)
@@ -113,7 +111,6 @@ class UserController extends Controller
         $this->validate($req, [
             'name' => 'required|max:255',
             'roles' => 'required',
-            'password' => 'required|min:6|confirmed',
             'store' => 'required',
         ]);
 
@@ -127,9 +124,9 @@ class UserController extends Controller
                 $usr->password = bcrypt($req['password']);
             }
 
-            if (empty($usr->api_token)) {
-                $usr->api_token = str_random(60);
-            }
+            $usr->api_token = str_random(60);
+
+            $usr->updated_at = Carbon::now();
 
             $usr->save();
 
@@ -148,12 +145,12 @@ class UserController extends Controller
                 $usr->profile()->save($p);
             }
 
-            $usr->userDetail->type = $req['type'];
+            $usr->userDetail->type = $req['user_type'];
             $usr->userDetail->allow_login = boolval($req['allow_login']);
             $usr->userDetail->save();
         });
 
-        return redirect(route('db.admin.user'));
+        return response()->json();
     }
 
     public function delete($id)

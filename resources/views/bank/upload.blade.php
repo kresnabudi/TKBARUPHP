@@ -12,6 +12,14 @@
     @lang('bank.upload.page_title_desc')
 @endsection
 
+@section('custom_css')
+    <link rel="stylesheet" type="text/css" href="{{ mix('adminlte/fileinput/fileinput.css') }}">
+@endsection
+
+@section('breadcrumbs')
+    {!! Breadcrumbs::render('bank_upload') !!}
+@endsection
+
 @section('content')
     @if ($message = Session::get('success'))
         <div class="alert alert-success">
@@ -42,20 +50,20 @@
                     <div class="form-group {{ $errors->has('file_path') ? 'has-error' : '' }}">
                         <label for="inputFilePath" class="col-sm-2 control-label">@lang('bank.upload.field.file')</label>
                         <div class="col-sm-5">
-                            <input id="inputFilePath" name="file_path" type="file" class="form-control">
+                            <input id="inputFilePath" name="file_path" type="file" class="file form-control" data-show-upload="false" data-allowed-file-extensions='["jpg","png"]'>
                             <span class="help-block">{{ $errors->has('file_path') ? $errors->first('file_path') : '' }}</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputButton" class="col-sm-2 control-label"></label>
+                        <div class="col-sm-10">
+                            <a href="{{ route('db.bank.upload') }}" class="btn btn-default">@lang('buttons.cancel_button')</a>
+                            <button class="btn btn-default" type="submit">@lang('buttons.submit_button')</button>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="box-footer">
-                <div class="form-group">
-                    <label for="inputButton" class="col-sm-2 control-label"></label>
-                    <div class="col-sm-10">
-                        <a href="{{ route('db.bank.upload') }}" class="btn btn-default">@lang('buttons.cancel_button')</a>
-                        <button class="btn btn-default" type="submit">@lang('buttons.submit_button')</button>
-                    </div>
-                </div>
             </div>
         </form>
     </div>
@@ -84,4 +92,9 @@
             </table>
         </div>
     </div>
+@endsection
+
+@section('custom_js')
+    <script type="application/javascript" src="{{ mix('adminlte/fileinput/fileinput.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/fileinput/id.js') }}"></script>
 @endsection

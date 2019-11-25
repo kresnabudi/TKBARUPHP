@@ -22,11 +22,14 @@ use App\Services\CustomerService;
 
 use DB;
 use Auth;
+use Config;
+use Exception;
 use Validator;
 use App\Http\Requests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Vinkla\Hashids\Facades\Hashids;
+use phpDocumentor\Reflection\Types\Integer;
 
 class CustomerController extends Controller
 {
@@ -38,8 +41,11 @@ class CustomerController extends Controller
         $this->middleware('auth', [ 
             'except' => [ 
                 'searchCustomers',
-                'getPassiveCustomer'
-            ] 
+                'getPassiveCustomer',
+                'getCustomer',
+                'getOpenSales',
+                'getLastSale',
+            ]
         ]);
     }
 
@@ -53,9 +59,9 @@ class CustomerController extends Controller
                 ->orWhereHas('profiles', function ($query) use ($param) {
                     $query->where('first_name', 'like', "%$param%")
                         ->orWhere('last_name', 'like', "%$param%");
-                })->paginate(10);
+                })->paginate(Config::get('const.PAGINATION'));
         } else {
-            $customer = Customer::paginate(10);
+            $customer = Customer::paginate(Config::get('const.PAGINATION'));
         }
 
         return view('customer.index')->with('customer', $customer);
@@ -65,7 +71,7 @@ class CustomerController extends Controller
     {
         $customer = Customer::with('profiles.phoneNumbers', 'bankAccounts.bank', 'expenseTemplates')->find($id);
 
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         $bankDDL = Bank::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
         $providerDDL = PhoneProvider::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
 
@@ -74,93 +80,107 @@ class CustomerController extends Controller
 
     public function create()
     {
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $mapsAPIKey = env('MAPS_API_KEY');
+        $store = Auth::user()->store;
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         $bankDDL = Bank::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
         $providerDDL = PhoneProvider::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
-        $priceLevelDDL = PriceLevel::whereStatus('STATUS.ACTIVE')->get(['name', 'description', 'weight', 'id']);
+        $priceLevelDDL = PriceLevel::whereStatus('STATUS.ACTIVE')->get(['type', 'name', 'description', 'weight', 'id']);
+        $expenseTypes = LookupRepo::findByCategory('EXPENSETYPE')->pluck('i18nDescription', 'code');
         $expenseTemplates = ExpenseTemplate::all();
 
-        return view('customer.create', compact('statusDDL', 'bankDDL', 'providerDDL', 'priceLevelDDL', 'expenseTemplates'));
+        return view('customer.create', compact('statusDDL', 'bankDDL', 'providerDDL', 'priceLevelDDL', 'expenseTemplates', 'mapsAPIKey', 'store', 'expenseTypes'));
     }
 
     public function store(Request $data)
     {
-        $validator = Validator::make($data->all(), [
+        Validator::make($data->all(), [
             'name' => 'required|string|max:255',
             'status' => 'required',
-        ]);
+        ])->validate();
 
-        if ($validator->fails()) {
-            return redirect(route('db.master.customer.create'))->withInput()->withErrors($validator);
-        } else {
-            DB::transaction(function() use ($data) {
-                $customer = new Customer();
-                $customer->store_id = Auth::user()->store->id;
-                $customer->name = $data['name'];
-                $customer->address = $data['address'];
-                $customer->city = $data['city'];
-                $customer->phone_number = $data['phone'];
-                $customer->tax_id = $data['tax_id'];
-                $customer->remarks = $data['remarks'];
-                $customer->payment_due_day = is_int($data['payment_due_day']) ? $data['payment_due_day'] : 0;
-                $customer->price_level_id = $data['price_level'];
-                $customer->status = $data['status'];
+        DB::beginTransaction();
+        try  {
+            $customer = new Customer();
+            $customer->store_id = Auth::user()->store->id;
+            $customer->name = $data['name'];
+            $customer->address = $data['address'];
+            $customer->latitude = empty($data['latitude']) ? 0:$data['latitude'];
+            $customer->longitude = empty($data['longitude']) ? 0:$data['longitude'];
+            $customer->distance = empty($data['distance']) ? 0:$data['distance'];
+            $customer->distance_text = $data['distance_text'];
+            $customer->duration = empty($data['duration']) ? 0:$data['duration'];
+            $customer->duration_text = $data['duration_text'];
+            $customer->city = $data['city'];
+            $customer->phone_number = $data['phone'];
+            $customer->tax_id = $data['tax_id'];
+            $customer->remarks = $data['remarks'];
+            $customer->payment_due_day = empty($data->input('payment_due_day')) ? 0 : $data->input('payment_due_day');
+            $customer->price_level_id = $data['price_level'];
+            $customer->status = $data['status'];
 
-                $customer->save();
+            $customer->save();
 
-                for ($i = 0; $i < count($data['bank']); $i++) {
-                    $ba = new BankAccount();
-                    $ba->bank_id = $data["bank"][$i];
-                    $ba->account_name = $data["account_name"][$i];
-                    $ba->account_number = $data["account_number"][$i];
-                    $ba->remarks = $data["bank_remarks"][$i];
+            for ($i = 0; $i < count($data['bank']); $i++) {
+                $ba = new BankAccount();
+                $ba->bank_id = $data["bank"][$i];
+                $ba->account_name = $data["account_name"][$i];
+                $ba->account_number = $data["account_number"][$i];
+                $ba->remarks = $data["bank_remarks"][$i];
 
-                    $customer->bankAccounts()->save($ba);
+                $customer->bankAccounts()->save($ba);
+            }
+
+            for ($i = 0; $i < count($data['first_name']); $i++) {
+                $pa = new Profile();
+                $pa->first_name = $data["first_name"][$i];
+                $pa->last_name = $data["last_name"][$i];
+                $pa->address = $data["profile_address"][$i];
+                $pa->ic_num = $data["ic_num"][$i];
+
+                $customer->profiles()->save($pa);
+
+                for ($j = 0; $j < count($data['profile_' . $i . '_phone_provider']); $j++) {
+                    $ph = new PhoneNumber();
+                    $ph->phone_provider_id = $data['profile_' . $i . '_phone_provider'][$j];
+                    $ph->number = $data['profile_' . $i . '_phone_number'][$j];
+                    $ph->remarks = $data['profile_' . $i . '_remarks'][$j];
+
+                    $pa->phoneNumbers()->save($ph);
                 }
+            }
 
-                for ($i = 0; $i < count($data['first_name']); $i++) {
-                    $pa = new Profile();
-                    $pa->first_name = $data["first_name"][$i];
-                    $pa->last_name = $data["last_name"][$i];
-                    $pa->address = $data["profile_address"][$i];
-                    $pa->ic_num = $data["ic_num"][$i];
+            if (count($data->input('expense_template_id')) > 0) {
+                $customer->expenseTemplates()->sync($data->input('expense_template_id'));
+            }
 
-                    $customer->profiles()->save($pa);
-
-                    for ($j = 0; $j < count($data['profile_' . $i . '_phone_provider']); $j++) {
-                        $ph = new PhoneNumber();
-                        $ph->phone_provider_id = $data['profile_' . $i . '_phone_provider'][$j];
-                        $ph->number = $data['profile_' . $i . '_phone_number'][$j];
-                        $ph->remarks = $data['profile_' . $i . '_remarks'][$j];
-
-                        $pa->phoneNumbers()->save($ph);
-                    }
-                }
-
-                if (count($data->input('expense_template_id')) > 0) {
-                    $customer->expenseTemplates()->sync($data->input('expense_template_id'));
-                }
-            });
-
-            return redirect(route('db.master.customer'));
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
         }
+
+        return response()->json();
     }
 
     public function edit($id)
     {
+        $mapsAPIKey = env('MAPS_API_KEY');
+        $store = Auth::user()->store;
         $customer = Customer::with('profiles.phoneNumbers', 'bankAccounts.bank', 'expenseTemplates')->find($id);
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         $bankDDL = Bank::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
         $providerDDL = PhoneProvider::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
-        $priceLevelDDL = PriceLevel::whereStatus('STATUS.ACTIVE')->get(['name', 'description', 'weight', 'id']);
+        $priceLevelDDL = PriceLevel::whereStatus('STATUS.ACTIVE')->get(['type', 'name', 'description', 'weight', 'id']);
+        $expenseTypes = LookupRepo::findByCategory('EXPENSETYPE')->pluck('i18nDescription', 'code');
         $expenseTemplates = ExpenseTemplate::all();
 
-        return view('customer.edit', compact('customer', 'statusDDL', 'bankDDL', 'providerDDL', 'priceLevelDDL', 'expenseTemplates'));
+        return view('customer.edit', compact('customer', 'statusDDL', 'bankDDL', 'providerDDL', 'priceLevelDDL', 'expenseTemplates', 'mapsAPIKey', 'store', 'expenseTypes'));
     }
 
     public function update($id, Request $data)
     {
-        DB::transaction(function() use ($id, $data) {
+        DB::beginTransaction();
+        try {
             $customer = Customer::findOrFail($id);
 
             if (!$customer) {
@@ -231,12 +251,18 @@ class CustomerController extends Controller
 
             $customer->name = $data['name'];
             $customer->address = $data['address'];
+            $customer->latitude = empty($data['latitude']) ? 0:$data['latitude'];
+            $customer->longitude = empty($data['longitude']) ? 0:$data['longitude'];
+            $customer->distance = empty($data['distance']) ? 0:$data['distance'];
+            $customer->distance_text = $data['distance_text'];
+            $customer->duration = empty($data['duration']) ? 0:$data['duration'];
+            $customer->duration_text = $data['duration_text'];
             $customer->city = $data['city'];
             $customer->phone_number = $data['phone'];
             $customer->tax_id = $data['tax_id'];
             $customer->remarks = $data['remarks'];
             $customer->price_level_id = empty($data['price_level']) ? 0 : $data['price_level'];
-            $customer->payment_due_day = is_int($data['payment_due_day']) ? $data['payment_due_day'] : 0;
+            $customer->payment_due_day = empty($data->input('payment_due_day')) ? 0 : $data->input('payment_due_day');
             $customer->status = $data['status'];
 
             $customer->save();
@@ -244,7 +270,10 @@ class CustomerController extends Controller
             if (count($data->input('expense_template_id')) > 0) {
                 $customer->expenseTemplates()->sync($data->input('expense_template_id'));
             }
-        });
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+        };
 
         return redirect(route('db.master.customer'));
     }
@@ -300,14 +329,14 @@ class CustomerController extends Controller
         $solist = SalesOrder::with('customer', 'items.delivers', 'items.product')
             ->where('customer_id', '=', $id)
             ->where('status', '=', 'SOSTATUS.WCC')
-            ->paginate(10);
+            ->paginate(Config::get('const.PAGINATION'));
 
         return view('customer.confirmation.index', compact('solist'));
     }
 
     public function confirmSalesOrder($id)
     {
-        $so = SalesOrder::with('customer', 'items.product.productUnits.unit')->where('id', '=', $id)->first();
+        $so = SalesOrder::with('customer', 'items.product.productUnits.unit', 'items.delivers')->where('id', '=', $id)->first();
 
         return view('customer.confirmation.confirm', compact('so'));
     }
@@ -315,31 +344,32 @@ class CustomerController extends Controller
     public function storeConfirmationSalesOrder($id, Request $request)
     {
         for ($i = 0; $i < sizeof($request->input('item_id')); $i++) {
-            $conversionValue = ProductUnit::where([
-                'product_id' => $request->input("product_id.$i"),
-                'unit_id' => $request->input("selected_unit_id.$i")
-            ])->first()->conversion_value;
+            $conversionValue = ProductUnit::whereId($request->input("selected_unit_id.$i"))->first()->conversion_value;
 
-            $deliver = Deliver::whereId($request->input('deliver_id'))->first();
-            $deliver->netto = $request->input('netto');
-            $deliver->base_netto = $conversionValue * $request->input('netto');
-            $deliver->tare = $request->input('tare');
-            $deliver->base_tare = $conversionValue * $request->input('tare');
-            $deliver->remarks = $request->input('remarks');
+            $deliver = Deliver::whereId($request->input("deliver_id.$i"))->first();
+
+            $deliver->confirm_receive_date = date('Y-m-d H:i:s', strtotime($request->input("confirm_receive_date.0")));
+            $deliver->netto = $request->input("netto.$i");
+            $deliver->base_netto = $conversionValue * $request->input("netto.$i");
+            $deliver->tare = $request->input("tare.$i");
+            $deliver->base_tare = $conversionValue * $request->input("tare.$i");
+            $deliver->remarks = $request->input("remarks.$i");
 
             $deliver->save();
         }
 
         $so = SalesOrder::whereId($id)->first();
-        $so->status = 'POSTATUS.WAPPV';
+        $so->status = 'SOSTATUS.WAPPV';
         $so->save();
 
-        return redirect()->action('CustomerController@confirmSalesOrder', [$id]);
+        return response()->json();
     }
 
     public function approvalIndex()
     {
-        $solist = SalesOrder::with('customer', 'items.product.productUnits.unit')->whereIn('status', ['SOSTATUS.WCC', 'SOSTATUS.WAPPV'])->paginate(10);
+        $solist = SalesOrder::with('customer', 'items.product.productUnits.unit')
+            ->whereIn('status', ['SOSTATUS.WCC', 'SOSTATUS.WAPPV'])
+            ->paginate(Config::get('const.PAGINATION'));
 
         return view('customer.confirmation.approval', compact('solist'));
     }
@@ -401,15 +431,15 @@ class CustomerController extends Controller
     public function storePaymentCashCustomer($id, Request $request)
     {
 
-        return redirect()->action('App\Http\Controllers\CustomerController@paymentIndex');
+        return response()->json();
     }
 
     public function paymentTransferCustomer($id)
     {
         $currentStore = Store::with('bankAccounts.bank')->find(Auth::user()->store_id);
-        $currentSo = SalesOrder::with('payments', 'items.product.productUnits.unit',
+        $currentSo = SalesOrder::with('payments', 'items.product.productUnits.unit', 'items.discounts',
             'customer.profiles.phoneNumbers.provider', 'customer.bankAccounts.bank', 'vendorTrucking',
-            'warehouse')->find($id);
+            'warehouse', 'expenses')->find($id);
         $paymentTypeDDL = LookupRepo::findByCategory('PAYMENTTYPE')->pluck('description', 'code');
         $storeBankAccounts = $currentStore->bankAccounts;
         $customerBankAccounts = empty($currentSo->customer) ? collect([]) : $currentSo->customer->bankAccounts;
@@ -424,8 +454,7 @@ class CustomerController extends Controller
 
     public function storePaymentTransferCustomer($id, Request $request)
     {
-
-        return redirect()->action('App\Http\Controllers\CustomerController@paymentIndex');
+        return response()->json();
     }
 
     public function paymentGiroCustomer($id)
@@ -445,11 +474,8 @@ class CustomerController extends Controller
 
     public function storePaymentGiroCustomer($id, Request $request)
     {
-
-        return redirect()->action('App\Http\Controllers\CustomerController@paymentIndex');
+        return response()->json();
     }
-
-    // ===================== REST API HANDLER METHODS ====================== //
 
     public function searchCustomers(Request $request)
     {
@@ -467,8 +493,6 @@ class CustomerController extends Controller
                       ->orWhere('last_name', 'like', "%$param%");
         })->get();
 
-        // Assign additional attribute, unpaid sales order amount
-        // and its last sales order.
         $customers = collect($customers->map(function ($customer){
             return array_merge([
                 'last_order' => $this->customerService->getCustomerLastOrder($customer->id),
@@ -482,5 +506,29 @@ class CustomerController extends Controller
     public function getPassiveCustomer()
     {
         return $this->customerService->getPassiveCustomer();
+    }
+
+    public function getCustomer(Request $request)
+    {
+        $id = $request->id;
+        $customer = Customer::with('profiles.phoneNumbers.provider', 'bankAccounts.bank', 'expenseTemplates', 'priceLevel')->find($id);
+
+        return response()->json($customer);
+    }
+
+    public function getOpenSales(Request $request)
+    {
+        $id = $request->id;
+        $open_sales = Customer::find($id)->sales_orders()->whereNotIn('status', [ 'SOSTATUS.RJT', 'SOSTATUS.C' ])->get();
+
+        return response()->json($open_sales);
+    }
+
+    public function getLastSale(Request $request)
+    {
+        $id = $request->id;
+        $last_sale = Customer::find($id)->sales_orders()->latest()->first();
+
+        return response()->json($last_sale);
     }
 }

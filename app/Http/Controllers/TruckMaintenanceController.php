@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Auth;
+use Config;
 use Validator;
 use App\Http\Requests;
 use Illuminate\Http\Request;
@@ -28,12 +29,12 @@ class TruckMaintenanceController extends Controller
         $trucklist = [];
 
         if (empty($truckId)) {
-            $trucklist = TruckMaintenance::paginate(10);
+            $trucklist = TruckMaintenance::paginate(Config::get('const.PAGINATION'));
         } else {
             if ($truckId != 'create') {
                 $trucklist = TruckMaintenance::whereHas('truck', function($t) use($truckId) {
                     $t->whereId(Hashids::decode($truckId));
-                })->paginate(10);
+                })->paginate(Config::get('const.PAGINATION'));
             }
         }
 
@@ -42,7 +43,7 @@ class TruckMaintenanceController extends Controller
 
     public function create()
     {
-        $mtctypeDDL = LookupRepo::findByCategory('TRUCKMTCTYPE')->pluck('code');
+        $mtctypeDDL = LookupRepo::findByCategory('TRUCKMTCTYPE')->pluck('i18nDescription', 'code');
         $trucklist = Truck::get()->pluck('plate_number', 'id');
 
         return view('truck_maintenance.create', compact('mtctypeDDL', 'trucklist'));
@@ -55,23 +56,20 @@ class TruckMaintenanceController extends Controller
             'maintenance_type' => 'required',
             'cost' => 'required|numeric',
             'odometer' => 'required|numeric',
+        ])->validate();
+
+        TruckMaintenance::create([
+            'store_id' => Auth::user()->store->id,
+            'truck_id' => $data['plate_number'],
+            'maintenance_date' => date('Y-m-d H:i:s', strtotime($data['maintenance_date'])),
+            'maintenance_type' => $data['maintenance_type'],
+            'cost' => $data['cost'],
+            'odometer' => $data['odometer'],
+            'remarks' => $data['remarks'],
         ]);
 
-        if ($validator->fails()) {
-            return redirect(route('db.truck.maintenance.create'))->withInput()->withErrors($validator);
-        } else {
-            TruckMaintenance::create([
-                'store_id' => Auth::user()->store->id,
-                'truck_id' => $data['plate_number'],
-                'maintenance_date' => date('Y-m-d H:i:s', strtotime($data['maintenance_date'])),
-                'maintenance_type' => $data['maintenance_type'],
-                'cost' => $data['cost'],
-                'odometer' => $data['odometer'],
-                'remarks' => $data['remarks'],
-            ]);
-
-            return redirect(route('db.truck.maintenance'));
-        }
+        return response()->json();
+            
     }
 
     public function edit($id)
@@ -79,7 +77,7 @@ class TruckMaintenanceController extends Controller
         $truckMtc = TruckMaintenance::find($id);
 
         $trucklist = Truck::get()->pluck('plate_number', 'id');
-        $mtctypeDDL = LookupRepo::findByCategory('TRUCKMTCTYPE')->pluck('code');
+        $mtctypeDDL = LookupRepo::findByCategory('TRUCKMTCTYPE')->pluck('i18nDescription', 'code');
 
         return view('truck_maintenance.edit', compact('truckMtc', 'trucklist', 'mtctypeDDL'));
     }
@@ -91,13 +89,11 @@ class TruckMaintenanceController extends Controller
             'cost' => 'required|numeric',
             'odometer' => 'required|numeric',
             'remarks' => 'required',
-        ]);
-        if ($validator->fails()) {
-            return redirect(route('db.truck.maintenance.edit', ['id' => $id]))->withInput()->withErrors($validator);
-        } else {
-            unset($req['plate_number']);
-            TruckMaintenance::find($id)->update($req->all());
-            return redirect(route('db.truck.maintenance'));
-        }
+        ])->validate();
+
+        unset($req['plate_number']);
+        TruckMaintenance::find($id)->update($req->all());
+
+        return response()->json();
     }
 }

@@ -17,34 +17,38 @@
 @endsection
 
 @section('custom_css')
-    <link rel="stylesheet" type="text/css" href="{{ asset('adminlte/fileinput/fileinput.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ mix('adminlte/fileinput/fileinput.css') }}">
 @endsection
 
 @section('content')
-    @if (count($errors) > 0)
-        <div class="alert alert-danger">
-            <strong>@lang('labels.GENERAL_ERROR_TITLE')</strong> @lang('labels.GENERAL_ERROR_DESC')<br><br>
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+    <div id="productVue">
+        <div v-show="errors.count() > 0" v-cloak>
+            <div class="alert alert-danger">
+                <strong>@lang('labels.GENERAL_ERROR_TITLE')</strong> @lang('labels.GENERAL_ERROR_DESC')<br><br>
+                <ul v-for="(e, eIdx) in errors.all()">
+                    <li>@{{ e }}</li>
+                </ul>
+            </div>
         </div>
-    @endif
 
-    <div class="box box-info">
-        <div class="box-header with-border">
-            <h3 class="box-title">@lang('product.create.header.title')</h3>
-        </div>
-        <form id="productForm" class="form-horizontal" action="{{ route('db.master.product.create') }}" enctype="multipart/form-data" method="post" data-parsley-validate="parsley">
+        <form id="productForm" class="form-horizontal" v-on:submit.prevent="validateBeforeSubmit()">
             {{ csrf_field() }}
-            <div id="productVue">
+            <div class="box box-info">
+                <div class="box-header with-border">
+                    <h3 class="box-title">@lang('product.create.header.title')</h3>
+                </div>
                 <div class="box-body">
-                    <div class="form-group {{ $errors->has('type') ? 'has-error' : '' }}">
+                    <div v-bind:class="{ 'form-group':true, 'has-error':errors.has('type') }">
                         <label for="inputType" class="col-sm-2 control-label">@lang('product.field.type')</label>
                         <div class="col-sm-10">
-                            {{ Form::select('type', $prodtypeDdL, null, array('class' => 'form-control', 'placeholder' => Lang::get('labels.PLEASE_SELECT'), 'data-parsley-required' => 'true')) }}
-                            <span class="help-block">{{ $errors->has('type') ? $errors->first('type') : '' }}</span>
+                            <select class="form-control"
+                                    name="type"
+                                    v-validate="'required'"
+                                    data-vv-as="{{ trans('product.field.type') }}">
+                                <option value="">@lang('labels.PLEASE_SELECT')</option>
+                                <option v-for="(value, key) in prodTypeDDL" v-bind:value="key">@{{ value }}</option>
+                            </select>
+                            <span v-show="errors.has('type')" class="help-block" v-cloak>@{{ errors.first('type') }}</span>
                         </div>
                     </div>
                     <div class="form-group {{ $errors->has('category') ? 'has-error' : '' }}">
@@ -61,15 +65,19 @@
                                 </thead>
                                 <tbody>
                                     <tr v-for="(cat, catIdx) in product_categories">
-                                        <td>
+                                        <td v-bind:class="{ 'has-error':errors.has('pcat_code_' + catIdx) }">
                                             <input type="hidden" name="cat_level[]" v-bind:value="catIdx">
-                                            <input type="text" class="form-control" id="inputCode" name="cat_code[]" data-parsley-required="true">
+                                            <input type="text" class="form-control" id="inputCode" name="cat_code[]"
+                                                v-validate="'required'" v-bind:data-vv-as="'{{ trans('product.create.table.category.header.code') }} ' + (catIdx + 1)"
+                                                v-bind:data-vv-name="'pcat_code_' + catIdx">
+                                        </td>
+                                        <td v-bind:class="{ 'has-error':errors.has('pcat_name_' + catIdx) }">
+                                            <input type="text" class="form-control" id="inputName" name="cat_name[]"
+                                                   v-validate="'required'" v-bind:data-vv-as="'{{ trans('product.create.table.category.header.name') }} ' + (catIdx + 1)"
+                                                   v-bind:data-vv-name="'pcat_name_' + catIdx">
                                         </td>
                                         <td>
-                                            <input type="text" class="form-control" id="inputName" name="cat_name[]" data-parsley-required="true">
-                                        </td>
-                                        <td>
-                                            <input type="text" class="form-control" id="inputDescription" name="cat_description[]" data-parsley-required="true">
+                                            <input type="text" class="form-control" id="inputDescription" name="cat_description[]">
                                         </td>
                                         <td class="valign-middle text-center">
                                             <button type="button" class="btn btn-xs btn-danger" v-on:click="removeCategory(catIdx)"><span class="fa fa-close"></span></button>
@@ -86,18 +94,19 @@
                             </table>
                         </div>
                     </div>
-                    <div class="form-group {{ $errors->has('name') ? 'has-error' : '' }}">
+                    <div v-bind:class="{ 'form-group':true, 'has-error':errors.has('name') }">
                         <label for="inputName" class="col-sm-2 control-label">@lang('product.field.name')</label>
                         <div class="col-sm-10">
-                            <input type="text" class="form-control" id="inputName" name="name" value="{{ old('name') }}" placeholder="@lang('product.field.name')" data-parsley-required="true">
-                            <span class="help-block">{{ $errors->has('name') ? $errors->first('name') : '' }}</span>
+                            <input type="text" class="form-control" id="inputName" name="name" value="{{ old('name') }}" placeholder="@lang('product.field.name')"
+                                   v-validate="'required'" data-vv-as="{{ trans('product.field.name') }}">
+                            <span v-show="errors.has('name')" class="help-block" v-cloak>@{{ errors.first('name') }}</span>
                         </div>
                     </div>
                     <div class="form-group {{ $errors->has('image_path') ? 'has-error' : '' }}">
                         <label for="inputImagePath" class="col-sm-2 control-label">&nbsp;</label>
                         <div class="col-sm-10">
                             <input type="file" class="file form-control" id="inputImagePath" name="image_path"
-                                data-show-upload="false" data-allowed-file-extensions='["jpg","png"]'>
+                                   data-show-upload="false" data-allowed-file-extensions='["jpg","png"]'>
                             <span class="help-block">{{ $errors->has('image_path') ? $errors->first('image_path') : '' }}</span>
                         </div>
                     </div>
@@ -142,23 +151,27 @@
                                         <td class="text-center valign-middle">
                                             <input type="checkbox" v-model="unit.selected" v-on:click="checkSelectAll()"/>
                                         </td>
-                                        <td>
-                                            {{ Form::select('unit_id[]', $unitDDL, null, array(
-                                                'class' => 'form-control',
-                                                'placeholder' => Lang::get('labels.PLEASE_SELECT'),
-                                                'v-model' => 'unit.unit_id', 'data-parsley-required' => 'true')) }}
+                                        <td v-bind:class="{ 'has-error':errors.has('unit_' + unitIdx) }">
+                                            <select class="form-control"
+                                                    name="unit_id[]"
+                                                    v-validate="'required'"
+                                                    v-bind:data-vv-as="'{{ trans('product.create.table.product.header.unit') }} ' + (unitIdx + 1)"
+                                                    v-bind:data-vv-name="'unit_' + unitIdx">
+                                                <option v-bind:value="defaultUnit.id">@lang('labels.PLEASE_SELECT')</option>
+                                                <option v-for="(value, key) in unitDDL" v-bind:value="key">@{{ value }}</option>
+                                            </select>
                                         </td>
                                         <td class="text-center">
                                             <input type="checkbox" v-model="unit.is_base" v-on:click="checkOnlyOneIsBase(unitIdx)"/>
                                             <input type="hidden" v-model="unit.is_base_val" name="is_base[]"/>
                                         </td>
-                                        <td>
+                                        <td v-bind:class="{ 'has-error':errors.has('conv_val_' + unitIdx) }">
                                             <input type="text" class="form-control" v-model="unit.conversion_value" name="conversion_value[]"
-                                                   data-parsley-required="true" v-bind:readonly="unit.is_base"/>
+                                                   v-bind:readonly="unit.is_base" v-validate="'required'"
+                                                   v-bind:data-vv-as="'{{ trans('product.create.table.product.header.conversion_value') }} ' + (unitIdx + 1)"
+                                                   v-bind:data-vv-name="'conv_val_' + unitIdx"/>
                                         </td>
-                                        <td>
-                                            <input type="text" class="form-control" v-model="unit.remarks" name="remarks[]"/>
-                                        </td>
+                                        <td> <input type="text" class="form-control" v-model="unit.remarks" name="unit_remarks[]"/> </td>
                                     </tr>
                                 </tbody>
                                 <tfoot>
@@ -172,20 +185,26 @@
                             </table>
                         </div>
                     </div>
-                    <div class="form-group {{ $errors->has('minimal_in_stock') ? 'has-error' : '' }}">
+                    <div v-bind:class="{ 'form-group':true, 'has-error':errors.has('minimal_in_stock') }">
                         <label for="inputMinimalInStock" class="col-sm-2 control-label">@lang('product.field.minimal_in_stock')</label>
                         <div class="col-sm-10">
                             <input type="text" class="form-control" id="inputMinimalInStock" name="minimal_in_stock"
-                                   value="0" placeholder="@lang('product.field.minimal_in_stock')"
-                                   data-parsley-type="number">
-                            <span class="help-block">{{ $errors->has('minimal_in_stock') ? $errors->first('minimal_in_stock') : '' }}</span>
+                                   v-validate="'required|min_value:0|numeric'" placeholder="@lang('product.field.minimal_in_stock')"
+                                   data-vv-as="{{ trans('product.field.minimal_in_stock') }}">
+                            <span v-show="errors.has('minimal_in_stock')" class="help-block" v-cloak>@{{ errors.first('minimal_in_stock') }}</span>
                         </div>
                     </div>
-                    <div class="form-group {{ $errors->has('status') ? 'has-error' : '' }}">
+                    <div v-bind:class="{ 'form-group':true, 'has-error':errors.has('status') }">
                         <label for="inputStatus" class="col-sm-2 control-label">@lang('product.field.status')</label>
                         <div class="col-sm-10">
-                            {{ Form::select('status', $statusDDL, null, array('class' => 'form-control', 'placeholder' => Lang::get('labels.PLEASE_SELECT'), 'data-parsley-required' => 'true')) }}
-                            <span class="help-block">{{ $errors->has('status') ? $errors->first('status') : '' }}</span>
+                            <select class="form-control"
+                                    name="status"
+                                    v-validate="'required'"
+                                    data-vv-as="{{ trans('product.field.status') }}">
+                                <option value="">@lang('labels.PLEASE_SELECT')</option>
+                                <option v-for="(value, key) in statusDDL" v-bind:value="key">@{{ value }}</option>
+                            </select>
+                            <span v-show="errors.has('status')" class="help-block" v-cloak>@{{ errors.first('status') }}</span>
                         </div>
                     </div>
                     <div class="form-group {{ $errors->has('remarks') ? 'has-error' : '' }}">
@@ -210,8 +229,8 @@
 @endsection
 
 @section('custom_js')
-    <script type="application/javascript" src="{{ asset('adminlte/fileinput/fileinput.js') }}"></script>
-    <script type="application/javascript" src="{{ asset('adminlte/fileinput/id.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/fileinput/fileinput.js') }}"></script>
+    <script type="application/javascript" src="{{ mix('adminlte/fileinput/id.js') }}"></script>
 
     <script type="application/javascript">
         var app = new Vue({
@@ -219,16 +238,44 @@
             data: {
                 selectedAll: false,
                 units: [{
-                    'selected': false,
-                    'unit_id': '',
-                    'is_base': false,
-                    'is_base_val': false,
-                    'conversion_value':'',
-                    'remarks': ''
+                    selected: false,
+                    unit_id: '',
+                    is_base: false,
+                    is_base_val: false,
+                    conversion_value:'',
+                    remarks: ''
                 }],
-                product_categories: []
+                product_categories: [],
+                prodTypeDDL: JSON.parse('{!! htmlspecialchars_decode($prodtypeDdL) !!}'),
+                unitDDL: JSON.parse('{!! htmlspecialchars_decode($unitDDL) !!}'),
+                statusDDL: JSON.parse('{!! htmlspecialchars_decode($statusDDL) !!}')
             },
             methods: {
+                validateBeforeSubmit: function() {
+                    var vm = this;
+                    this.$validator.validateAll().then(function(isValid) {
+                        if (!isValid) return;
+                        $('#loader-container').fadeIn('fast');
+                        axios.post('{{ route('api.post.db.master.product.create') }}' + '?api_token=' + $('#secapi').val()
+                            , new FormData($('#productForm')[0])
+                            , { headers: { 'content-type': 'multipart/form-data' } })
+                            .then(function(response) {
+                                window.location.href = '{{ route('db.master.product') }}';
+                        }).catch(function(e) {
+                            $('#loader-container').fadeOut('fast');
+                            if (e.response.data.errors != undefined && Object.keys(e.response.data.errors).length > 0) {
+                                for (var key in e.response.data.errors) {
+                                    for (var i = 0; i < e.response.data.errors[key].length; i++) {
+                                        vm.$validator.errors.add('', e.response.data.errors[key][i], 'server', '__global__');
+                                    }
+                                }
+                            } else {
+                                vm.$validator.errors.add('', e.response.status + ' ' + e.response.statusText, 'server', '__global__');
+                                if (e.response.data.message != undefined) { console.log(e.response.data.message); }
+                            }
+                        });
+                    });
+                },
                 addNew: function () {
                     this.units.push({
                         'selected': false,
@@ -294,6 +341,13 @@
                 },
                 removeCategory: function(idx) {
                     this.product_categories.splice(idx, 1);
+                }
+            },
+            computed: {
+                defaultUnit: function() {
+                    return {
+                        id: ''
+                    };
                 }
             }
         });

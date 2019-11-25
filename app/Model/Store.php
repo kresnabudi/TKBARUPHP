@@ -9,6 +9,7 @@
 namespace App\Model;
 
 use Auth;
+use Config;
 use Vinkla\Hashids\Facades\Hashids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -69,6 +70,17 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $ribbon
  * @method static \Illuminate\Database\Query\Builder|\App\Model\Store whereRibbon($value)
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Model\CurrenciesConversion[] $currenciesConversions
+ * @property float $latitude
+ * @property float $longitude
+ * @property-read mixed $numeral_format
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Store whereLatitude($value)
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Store whereLongitude($value)
+ * @property-read mixed $date_time_format
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Store onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Store withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\Store withoutTrashed()
  */
 class Store extends Model
 {
@@ -81,6 +93,8 @@ class Store extends Model
     protected $fillable = [
         'name',
         'address',
+        'latitude',
+        'longitude',
         'phone_num',
         'fax_num',
         'tax_id',
@@ -91,7 +105,6 @@ class Store extends Model
         'remarks',
         'date_format',
         'time_format',
-        '1224hour',
         'thousand_separator',
         'decimal_separator',
         'decimal_digit',
@@ -106,6 +119,53 @@ class Store extends Model
         'deleted_by',
         'deleted_at',
     ];
+
+    protected $appends = [
+        'numeralFormat',
+        'dateFormat',
+        'timeFormat',
+        'dateTimeformat'
+    ];
+
+    public function getNumeralFormatAttribute()
+    {
+        $thousandSeparator = is_null($this->attributes['thousand_separator']) ? ',':$this->attributes['thousand_separator'];
+        $decimalSeparator = is_null($this->attributes['decimal_separator']) ? '.':$this->attributes['decimal_separator'];
+        $decimalDigit = '';
+
+        if ($this->attributes['decimal_digit'] == 0) {
+            $decimalDigit = '00';
+        } else {
+            for ($i = 0; $i < $this->attributes['decimal_digit']; $i++) {
+                $decimalDigit .= '0';
+            }
+        }
+
+        return '0'.$thousandSeparator.'0'.'['.$decimalSeparator.']'.$decimalDigit;
+    }
+
+    public function getDateFormatAttribute()
+    {
+        if (is_null($this->attributes['date_format']) || empty($this->attributes['date_format'])) {
+            return Config::get('const.DATETIME_FORMAT.PHP_DATE');
+        } else {
+            return $this->attributes['date_format'];
+        }
+    }
+
+    public function getTimeFormatAttribute()
+    {
+        if (is_null($this->attributes['time_format']) || empty($this->attributes['time_format'])) {
+            return Config::get('const.DATETIME_FORMAT.PHP_TIME');
+        } else {
+            return $this->attributes['time_format'];
+        }
+    }
+
+    public function getDateTimeFormatAttribute()
+    {
+        return $this->getDateFormatAttribute() . ' ' . $this->getTimeFormatAttribute();
+    }
 
     public function hId()
     {
@@ -131,10 +191,12 @@ class Store extends Model
     {
         return $this->morphMany('App\Model\BankAccount', 'owner');
     }
+
     public function currenciesConversions()
     {
         return $this->hasMany('App\Model\CurrenciesConversion');
     }
+
     public function giros()
     {
         return $this->hasMany('App\Model\Giro');

@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 use Auth;
+use Config;
 use Illuminate\Http\Request;
 
 use App\Repos\LookupRepo;
@@ -24,7 +25,7 @@ class ProductTypeController extends Controller
 
     public function index()
     {
-        $prodtype = ProductType::paginate(10);
+        $prodtype = ProductType::paginate(Config::get('const.PAGINATION'));
         return view('product_type.index', compact('prodtype'));
     }
 
@@ -36,14 +37,14 @@ class ProductTypeController extends Controller
 
     public function create()
     {
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         return view('product_type.create', compact('statusDDL'));
     }
 
     public function store(Request $data)
     {
-        $this->validate($data, [
+        $validator = $this->validate($data, [
             'name' => 'required|string|max:255',
             'short_code' => 'required|string|max:255',
             'description' => 'required|string|max:255',
@@ -58,22 +59,30 @@ class ProductTypeController extends Controller
             'status' => $data['status'],
         ]);
 
-        return redirect(route('db.master.producttype'));
+        return response()->json();
     }
 
     public function edit($id)
     {
         $prodtype = ProductType::find($id);
 
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         return view('product_type.edit', compact('prodtype', 'statusDDL'));
     }
 
     public function update($id, Request $req)
     {
+        $validator = $this->validate($req, [
+            'name' => 'required|string|max:255',
+            'short_code' => 'required|string|max:255',
+            'description' => 'required|string|max:255',
+            'status' => 'required',
+        ]);
+
         ProductType::find($id)->update($req->all());
-        return redirect(route('db.master.producttype'));
+
+        return response()->json();
     }
 
     public function delete($id)

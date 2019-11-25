@@ -16,6 +16,7 @@ use App\Model\PhoneProvider;
 
 use App\Repos\LookupRepo;
 
+use Validator;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\PDF;
 use Illuminate\Http\Request;
@@ -70,6 +71,12 @@ class ReportAdminController extends Controller
                 });
             })
             ->get();
+
+        if (count($users) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         $roleName = '';
 
@@ -127,6 +134,12 @@ class ReportAdminController extends Controller
             })
             ->get();
 
+        if (count($roles) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
+
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
         }
@@ -159,7 +172,7 @@ class ReportAdminController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         //Parameters
         $storeName = $request->input('name');
@@ -172,6 +185,12 @@ class ReportAdminController extends Controller
                 return $query->orWhere('tax_id', 'like', "%$taxId%");
             })
             ->get();
+
+        if (count($stores) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
@@ -205,7 +224,7 @@ class ReportAdminController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         //Parameters
         $unitName = $request->input('name');
@@ -218,6 +237,12 @@ class ReportAdminController extends Controller
                 return $query->orWhere('symbol', 'like', "%$symbol%");
             })
             ->get();
+
+        if (count($units) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
@@ -251,7 +276,7 @@ class ReportAdminController extends Controller
         $currentUser = Auth::user()->name;
         $reportDate = Carbon::now();
         $showParameter = true;
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
 
         //Parameters
         $phoneProviderName = $request->input('name');
@@ -264,6 +289,12 @@ class ReportAdminController extends Controller
                 return $query->orWhere('short_name', 'like', "%$shortName%");
             })
             ->get();
+
+        if (count($phoneProviders) == 0) {
+            $rules = ['notFound' => 'required'];
+            $messages = ['notFound.required' => Lang::get('labels.DATA_NOT_FOUND')];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        }
 
         if (!File::exists(storage_path('app/public/reports'))) {
             File::makeDirectory(storage_path('app/public/reports'));
@@ -290,4 +321,8 @@ class ReportAdminController extends Controller
         return redirect(route('db.report.view', $fileName));
     }
 
+    public function generateSettingsReport(Request $request, PDF $pdf)
+    {
+        return "Under Constructions";
+    }
 }

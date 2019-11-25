@@ -21,6 +21,8 @@ use App\Services\PurchaseOrderService;
 
 use App\Util\POCodeGenerator;
 
+use Config;
+use Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -33,7 +35,7 @@ class PurchaseOrderController extends Controller
     {
         $this->purchaseOrderService = $purchaseOrderService;
         $this->supplierService = $supplierService;
-        $this->middleware('auth', [ 'except' => [ 'getDuePO', 'getUnreceivedPO' ] ]);
+        $this->middleware('auth', [ 'except' => [ 'getPOByDate', 'getDuePO', 'getUnreceivedPO', 'getListPODates' ] ]);
     }
 
     public function create()
@@ -58,7 +60,7 @@ class PurchaseOrderController extends Controller
     {
         Log::info('[PurchaseOrderController@store]');
 
-        $this->validate($request, [
+        Validator::make($request->all(), [
             'code'                      => 'required|string|max:255',
             'po_type'                   => 'required|string|max:255',
             'po_created'                => 'required|string|max:255',
@@ -75,15 +77,18 @@ class PurchaseOrderController extends Controller
             'item_disc_value.*.*'       => 'numeric',
             'disc_total_percent'        => 'numeric',
             'disc_total_value'          => 'numeric',
-        ]);
-        $this->purchaseOrderService->createPO($request);
+        ])->validate();
 
-        if (!empty($request->input('submitcreate'))) {
-            return redirect()->action('PurchaseOrderController@create');
-        } else {
-            return redirect(route('db'));
-        }
-		
+        if (is_null($this->purchaseOrderService->createPO($request))) {
+            $rules = ['po' => 'required'];
+            $messages = ['po.required' =>
+                LaravelLocalization::getCurrentLocale() == "en" ?
+                    "Create PO Failed":
+                    "Penbelian Gagal"];
+            Validator::make($request->all(), $rules, $messages)->validate();
+        };
+
+        return response()->json();
     }
 
     public function index()
@@ -91,7 +96,7 @@ class PurchaseOrderController extends Controller
         Log::info('[PurchaseOrderController@index]');
 
         $purchaseOrders = PurchaseOrder::with('supplier')->whereIn('status', ['POSTATUS.WA', 'POSTATUS.WP'])
-            ->paginate(10);
+            ->paginate(Config::get('const.PAGINATION'));
 
         return view('purchase_order.index', compact('purchaseOrders'));
     }
@@ -111,13 +116,17 @@ class PurchaseOrderController extends Controller
 
     public function saveRevision(Request $request, $id)
     {
+        Log::info('[PurchaseOrderController@saveRevision]');
+
         $this->purchaseOrderService->revisePO($request, $id);
 
-        return redirect(route('db.po.revise.index'));
+        return response()->json();
     }
 
     public function delete(Request $request, $id)
     {
+        Log::info('[PurchaseOrderController@delete]');
+
         $this->purchaseOrderService->rejectPO($request, $id);
 
         return redirect(route('db.po.revise.index'));
@@ -135,5 +144,18 @@ class PurchaseOrderController extends Controller
     public function getUnreceivedPO()
     {
         return $this->purchaseOrderService->getUnreceivedPO();
+    }
+
+    public function getPOByDate(Request $request)
+    {
+        $this->validate($request, [
+            'date' => 'required|date'
+        ]);
+        return $this->purchaseOrderService->searchPOByDate($request->query('date'));
+    }
+
+    public function getListPODates(Request $request)
+    {
+        return $this->purchaseOrderService->getLastPODates();
     }
 }

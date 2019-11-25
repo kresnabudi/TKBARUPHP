@@ -17,17 +17,6 @@
 @endsection
 
 @section('content')
-    @if (count($errors) > 0)
-        <div class="alert alert-danger">
-            <strong>@lang('labels.GENERAL_ERROR_TITLE')</strong> @lang('labels.GENERAL_ERROR_DESC')<br><br>
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     <div class="box box-info">
         <div class="box-header with-border">
             <h3 class="box-title">@lang('supplier.show.header.title')</h3>
@@ -37,7 +26,7 @@
             <div class="box-body">
                 <div class="nav-tabs-custom">
                     <ul class="nav nav-tabs">
-                        <li><a href="#tab_supplier" data-toggle="tab">@lang('supplier.show.tab.supplier')</a></li>
+                        <li class="active"><a href="#tab_supplier" data-toggle="tab">@lang('supplier.show.tab.supplier')</a></li>
                         <li><a href="#tab_pic" data-toggle="tab">@lang('supplier.show.tab.pic')</a></li>
                         <li><a href="#tab_bank_account" data-toggle="tab">@lang('supplier.show.tab.bank_account')</a></li>
                         <li><a href="#tab_product" data-toggle="tab">@lang('supplier.show.tab.product')</a></li>
@@ -83,6 +72,14 @@
                                 <div class="col-sm-10">
                                     <label id="inputTaxId" class="control-label">
                                         <span class="control-label-normal">{{ $supplier->tax_id }}</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputStatus" class="col-sm-2 control-label">@lang('supplier.field.status')</label>
+                                <div class="col-sm-10">
+                                    <label id="inputStatus" class="control-label">
+                                        <span class="control-label-normal">@lang('lookup.'.$supplier->status)</span>
                                     </label>
                                 </div>
                             </div>
@@ -147,20 +144,20 @@
                                                     <div class="col-sm-10">
                                                         <table class="table table-bordered">
                                                             <thead>
-                                                            <tr>
-                                                                <th>@lang('supplier.show.table_phone.header.provider')</th>
-                                                                <th>@lang('supplier.show.table_phone.header.number')</th>
-                                                                <th>@lang('supplier.show.table_phone.header.remarks')</th>
-                                                            </tr>
+                                                                <tr>
+                                                                    <th>@lang('supplier.show.table_phone.header.provider')</th>
+                                                                    <th>@lang('supplier.show.table_phone.header.number')</th>
+                                                                    <th>@lang('supplier.show.table_phone.header.remarks')</th>
+                                                                </tr>
                                                             </thead>
                                                             <tbody>
-                                                            @foreach($profile->phoneNumbers as $phone)
-                                                                <tr>
-                                                                    <td>{{ $phone->provider->name }}</td>
-                                                                    <td>{{ $phone->number }}</td>
-                                                                    <td>{{ $phone->remarks }}</td>
-                                                                </tr>
-                                                            @endforeach
+                                                                @foreach($profile->phoneNumbers as $phone)
+                                                                    <tr>
+                                                                        <td>{{ $phone->provider->name }}</td>
+                                                                        <td>{{ $phone->number }}</td>
+                                                                        <td>{{ $phone->remarks }}</td>
+                                                                    </tr>
+                                                                @endforeach
                                                             </tbody>
                                                         </table>
                                                     </div>
@@ -174,33 +171,33 @@
                         <div class="tab-pane" id="tab_bank_account">
                             <table class="table table-bordered">
                                 <thead>
-                                <tr>
-                                    <th class="text-center">@lang('supplier.show.table_bank.header.bank')</th>
-                                    <th class="text-center">@lang('supplier.show.table_bank.header.account_number')</th>
-                                    <th class="text-center">@lang('supplier.show.table_bank.header.remarks')</th>
-                                </tr>
+                                    <tr>
+                                        <th class="text-center">@lang('supplier.show.table_bank.header.bank')</th>
+                                        <th class="text-center">@lang('supplier.show.table_bank.header.account_number')</th>
+                                        <th class="text-center">@lang('supplier.show.table_bank.header.remarks')</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                @foreach($supplier->bankAccounts as $ba)
-                                    <tr>
-                                        <td>{{ $ba->bank->name }}&nbsp;({{ $ba->bank->name }})</td>
-                                        <td>{{ $ba->account_number }}</td>
-                                        <td>{{ $ba->remarks }}</td>
-                                    </tr>
-                                @endforeach
+                                    @foreach($supplier->bankAccounts as $ba)
+                                        <tr>
+                                            <td>{{ $ba->bank->name }}&nbsp;({{ $ba->bank->name }})</td>
+                                            <td>{{ $ba->account_number }}</td>
+                                            <td>{{ $ba->remarks }}</td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
                         <div class="tab-pane" id="tab_expenses">
                             <table class="table table-bordered">
                                 <thead>
-                                <tr>
-                                    <th class="text-center">@lang('supplier.show.table_expense.header.name')</th>
-                                    <th class="text-center">@lang('supplier.show.table_expense.header.type')</th>
-                                    <th class="text-center">@lang('supplier.show.table_expense.header.amount')</th>
-                                    <th class="text-center">@lang('supplier.show.table_expense.header.internal_expense')</th>
-                                    <th class="text-center">@lang('supplier.show.table_expense.header.remarks')</th>
-                                </tr>
+                                    <tr>
+                                        <th class="text-center">@lang('supplier.show.table_expense.header.name')</th>
+                                        <th class="text-center">@lang('supplier.show.table_expense.header.type')</th>
+                                        <th class="text-center">@lang('supplier.show.table_expense.header.amount')</th>
+                                        <th class="text-center">@lang('supplier.show.table_expense.header.internal_expense')</th>
+                                        <th class="text-center">@lang('supplier.show.table_expense.header.remarks')</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($supplier->expenseTemplates as $key => $expenseTemplate)

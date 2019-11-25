@@ -16,8 +16,8 @@ use App\Model\PurchaseOrder;
 use App\Model\ItemDiscounts;
 use App\Services\PurchaseOrderService;
 
-use Carbon\Carbon;
 use DB;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Doctrine\Common\Collections\Collection;
@@ -32,7 +32,9 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
      */
     public function createPO(Request $request)
     {
-        DB::transaction(function() use ($request) {
+        DB::beginTransaction();
+
+        try {
             if ($request->input('supplier_type') == 'SUPPLIERTYPE.R'){
                 $supplier_id = empty($request->input('supplier_id')) ? 0 : $request->input('supplier_id');
                 $walk_in_supplier = '';
@@ -52,6 +54,8 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
                 'walk_in_supplier' => $walk_in_supplier,
                 'walk_in_supplier_detail' => $walk_in_supplier_detail,
                 'remarks' => $request->input('remarks'),
+                'internal_remarks' => $request->input('internal_remarks'),
+                'private_remarks' => $request->input('private_remarks'),
                 'status' => Lookup::whereCode('POSTATUS.WA')->first()->code,
                 'supplier_id' => $supplier_id,
                 'vendor_trucking_id' => empty($request->input('vendor_trucking_id')) ? 0 : $request->input('vendor_trucking_id'),
@@ -69,24 +73,21 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
                 $item->store_id = Auth::user()->store_id;
                 $item->selected_unit_id = $request->input("item_selected_unit_id.$i");
                 $item->base_unit_id = $request->input("base_unit_id.$i");
-                $item->conversion_value = ProductUnit::where([
-                    'product_id' => $item->product_id,
-                    'unit_id' => $item->selected_unit_id
-                ])->first()->conversion_value;
+                $item->conversion_value = ProductUnit::whereId($item->selected_unit_id)->first()->conversion_value;
                 $item->quantity = $request->input("item_quantity.$i");
                 $item->price = floatval(str_replace(',', '', $request->input("item_price.$i")));
                 $item->to_base_quantity = $item->quantity * $item->conversion_value;
 
                 $item_saved = $po->items()->save($item);
-				
-				for ($ia = 0; $ia < count($request->input('item_disc_percent.'.$i)); $ia++) {
+
+                for ($ia = 0; $ia < count($request->input('item_disc_percent.'.$i)); $ia++) {
                     if( $request->input('item_disc_percent.'.$i.'.'.$ia) > 0 ){
                         $itemDiscounts = new ItemDiscounts();
-    					$itemDiscounts->item_disc_percent = $request->input('item_disc_percent.'.$i.'.'.$ia);
-    					$itemDiscounts->item_disc_value = $request->input('item_disc_value.'.$i.'.'.$ia);
-    					$item_saved->discounts()->save($itemDiscounts);
+                        $itemDiscounts->item_disc_percent = $request->input('item_disc_percent.'.$i.'.'.$ia);
+                        $itemDiscounts->item_disc_value = $request->input('item_disc_value.'.$i.'.'.$ia);
+                        $item_saved->discounts()->save($itemDiscounts);
                     }
-				}
+                }
             }
 
             for($i = 0; $i < count($request->input('expense_name')); $i++){
@@ -99,8 +100,13 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
                 $po->expenses()->save($expense);
             }
 
+            DB::commit();
+
             return $po;
-        });
+        } catch (Exception $e) {
+            DB::rollBack();
+            return null;
+        }
     }
 
     /**
@@ -127,8 +133,9 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
      */
     public function revisePO(Request $request, $id)
     {
-        DB::transaction(function() use ($id, $request) {
-                
+        DB::beginTransaction();
+
+        try {
             // Get current PO
             $currentPo = PurchaseOrder::with('items')->find($id);
 
@@ -149,6 +156,8 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
             $currentPo->warehouse_id = $request->input('warehouse_id');
             $currentPo->vendor_trucking_id = empty($request->input('vendor_trucking_id')) ? 0 : $request->input('vendor_trucking_id');
             $currentPo->remarks = $request->input('remarks');
+            $currentPo->internal_remarks = $request->input('internal_remarks');
+            $currentPo->private_remarks = $request->input('private_remarks');
             $currentPo->disc_percent = $request->input('disc_total_percent');
             $currentPo->disc_value = $request->input('disc_total_value');
 
@@ -158,10 +167,7 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
                 $item->store_id = Auth::user()->store_id;
                 $item->selected_unit_id = $request->input("item_selected_unit_id.$i");
                 $item->base_unit_id = $request->input("base_unit_id.$i");
-                $item->conversion_value = ProductUnit::where([
-                    'product_id' => $item->product_id,
-                    'unit_id' => $item->selected_unit_id
-                ])->first()->conversion_value;
+                $item->conversion_value = ProductUnit::whereId($item->selected_unit_id)->first()->conversion_value;
                 $item->quantity = $request->input("item_quantity.$i");
                 $item->price = floatval(str_replace(',', '', $request->input("item_price.$i")));
                 $item->to_base_quantity = $item->quantity * $item->conversion_value;
@@ -216,8 +222,14 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
 
             $currentPo->save();
 
+            DB::commit();
+
             return $currentPo;
-        });
+        } catch (Exception $exception) {
+            DB::rollBack();
+
+            return null;
+        }
     }
 
     /**
@@ -242,7 +254,7 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
      */
     public function getPOForReceipt($poId)
     {
-        return PurchaseOrder::with('items.product.productUnits.unit')->find($poId);
+        return PurchaseOrder::with('items.product.productUnits.unit', 'receipts')->find($poId);
     }
 
     /**
@@ -294,9 +306,9 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
     public function getDuePO($daysToDue = 1)
     {
         $poWaitingForPayment = PurchaseOrder::with('receipts', 'supplier')
-        ->where('status', '=', 'POSTATUS.WP')
-        ->whereHas('supplier', function($query){
-            $query->where('payment_due_day', '>', 0);
+            ->where('status', '=', 'POSTATUS.WP')
+            ->whereHas('supplier', function($query){
+                $query->where('payment_due_day', '>', 0);
         })->get();
 
         $today = Carbon::today();
@@ -310,7 +322,7 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
     }
 
      /**
-     * Get all purchase orders that have not been received in more than 
+     * Get all purchase orders that have not been received in more than
      * given threshold days since its shipping date.
      *
      * @param int $threshold threshold in day
@@ -318,8 +330,85 @@ class PurchaseOrderServiceImpl implements PurchaseOrderService
      */
     public function getUnreceivedPO($threshold = 3)
     {
-        return PurchaseOrder::where('status', '=', 'POSTATUS.WA')
-        ->where('shipping_date', '<', Carbon::today()->addDays(-$threshold))
-        ->doesntHave('receipts')->get();
+        $purchaseOrders = PurchaseOrder::with('supplier')
+            ->where('status', '=', 'POSTATUS.WA')
+            ->where('shipping_date', '<', Carbon::today()->addDays(-$threshold))
+            ->doesntHave('receipts')->get();
+
+        foreach($purchaseOrders AS $purchaseOrder)
+        {
+            $purchaseOrder->totalAmount = $purchaseOrder->totalAmount();
+        }
+
+        return $purchaseOrders;
+    }
+
+    public function searchPO($keyword)
+    {
+        $purchaseOrders = PurchaseOrder::with('supplier.profiles')
+            ->where('code', 'like', '%'.$keyword.'%')
+            ->orWhereHas('supplier.profiles', function($query) use ($keyword) {
+                $query->where('first_name', 'like', '%'.$keyword.'%')
+                    ->where('last_name', 'like', '%'.$keyword.'%');
+            });
+
+        return $purchaseOrders;
+    }
+
+    public function searchPOByDate($date)
+    {
+        $date = Carbon::parse($date)->format('Y-m-d');
+
+        $purchaseOrders = PurchaseOrder::with([ 'items.product', 'supplier.profiles', 'receipts.item.product',
+            'receipts.item.selectedUnit' => function($q) { $q->with('unit')->withTrashed(); }
+        ])
+            ->where('po_created', 'like', '%'.$date.'%')->get();
+
+        return $purchaseOrders;
+    }
+
+    public function updatePOStatus(PurchaseOrder $poData, $amount)
+    {
+        if (($amount + $poData->totalAmountPaid()) === $poData->totalAmount()) {
+            $poData->status = 'POSTATUS.C';
+
+            $poData->save();
+        }
+    }
+
+    public function getLastPODates($limit = 50)
+    {
+        $po = PurchaseOrder::all()->groupBy(function ($po) {
+            return $po->po_created->format('d-M-y');
+        })->take($limit)->map(function($item) {
+            return $item->all()[0]->po_created->format('d/m/y');
+        });
+
+        return $po;
+    }
+
+    public function getPOByCode($code)
+    {
+        return PurchaseOrder::with('supplier')
+            ->where('code', '=', $code)
+            ->get();
+    }
+
+    public function addExpenses($poId, $expenseArr)
+    {
+        $currentPo = PurchaseOrder::whereId($poId)->first();
+
+        for($i = 0; $i < count($expenseArr); $i++){
+            $expense = new Expense();
+            $expense->name = $expenseArr[$i]["expense_name"];
+            $expense->type = $expenseArr[$i]["expense_type"];
+            $expense->is_internal_expense = !empty($expenseArr[$i]["is_internal_expense"]);
+            $expense->amount = floatval(str_replace(',', '', $expenseArr[$i]["expense_amount"]));
+            $expense->remarks = $expenseArr[$i]["expense_remarks"];
+
+            $currentPo->expenses()->save($expense);
+        }
+
+        $currentPo->save();
     }
 }

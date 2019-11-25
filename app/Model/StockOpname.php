@@ -2,10 +2,13 @@
 
 namespace App\Model;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Auth;
+
 use Vinkla\Hashids\Facades\Hashids;
+
+use App\Traits\StoreFilter;
 
 /**
  * App\Model\StockOpname
@@ -39,10 +42,20 @@ use Vinkla\Hashids\Facades\Hashids;
  * @method static \Illuminate\Database\Query\Builder|\App\Model\StockOpname whereUpdatedAt($value)
  * @method static \Illuminate\Database\Query\Builder|\App\Model\StockOpname whereDeletedAt($value)
  * @mixin \Eloquent
+ * @property-read \App\Model\Stock $stock
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\StockOpname onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\StockOpname withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\StockOpname withoutTrashed()
+ * @property int $store_id
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Model\StockOpname whereStoreId($value)
  */
 class StockOpname extends Model
 {
     use SoftDeletes;
+
+    use StoreFilter;
 
     protected $dates = ['deleted_at'];
 
@@ -50,6 +63,7 @@ class StockOpname extends Model
 
     protected $fillable = [
         'stock_id',
+        'store_id',
         'opname_date',
         'is_match',
         'previous_quantity',
@@ -60,6 +74,11 @@ class StockOpname extends Model
     public function hId()
     {
         return HashIds::encode($this->attributes['id']);
+    }
+
+    public function stock()
+    {
+        return $this->belongsTo('App\Model\Stock');
     }
 
     public function stockIn()

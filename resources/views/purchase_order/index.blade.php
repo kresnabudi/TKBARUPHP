@@ -44,7 +44,7 @@
                         @foreach ($purchaseOrders as $key => $po)
                             <tr>
                                 <td class="text-center">{{ $po->code }}</td>
-                                <td class="text-center">{{ $po->po_created }}</td>
+                                <td class="text-center">{{ date(Auth::user()->store->dateTimeFormat, strtotime($po->po_created)) }}</td>
                                 <td class="text-center">
                                     @if($po->supplier_type == 'SUPPLIERTYPE.R')
                                         {{ $po->supplier->name }}
@@ -52,19 +52,18 @@
                                         {{ $po->walk_in_supplier }}
                                     @endif
                                 </td>
-                                <td class="text-center">{{ $po->shipping_date }}</td>
+                                <td class="text-center">{{ date(Auth::user()->store->dateTimeFormat, strtotime($po->shipping_date)) }}</td>
                                 <td class="text-center">@lang('lookup.'.$po->status)</td>
                                 <td class="text-center" width="10%">
                                     <a class="btn btn-xs btn-primary" href="{{ route('db.po.revise', $po->hId()) }}"
                                     title="Revise"><span class="fa fa-pencil fa-fw"></span></a>
                                     @if($po->status == 'POSTATUS.WA')
-                                        {!! Form::open(['method' => 'DELETE', 'route' => ['db.po.reject', $po->hId()], 'style'=>'display:inline'])  !!}
+                                        {!! Form::open(['id' => 'deleteForm', 'method' => 'DELETE', 'route' => ['db.po.reject', $po->hId()], 'style'=>'display:inline'])  !!}
                                         <button type="submit" class="btn btn-xs btn-danger" title="Reject" id="delete_button" v-on:click.prevent="showAlert">
                                             <span class="fa fa-close fa-fw"></span></button>
                                         {!! Form::close() !!}
                                     @else
-                                        <button type="submit" class="btn btn-xs btn-danger" title="Reject" id="delete_button"
-                                                disabled><span class="fa fa-close fa-fw"></span></button>
+                                        <button type="submit" class="btn btn-xs btn-danger" title="Reject" id="delete_button" disabled><span class="fa fa-close fa-fw"></span></button>
                                     @endif
                                 </td>
                             </tr>
@@ -81,28 +80,26 @@
 
 @section('custom_js')
     <script type="application/javascript">
-        $(document).ready(function () {
-            var poApp = new Vue({
-                el: '#poVue',
-                methods: {
-                    showAlert: function (event) {
-                        var buttonId = event.currentTarget.id;
-                        var form = $('#'+buttonId).parents('form');
-                        swal({
-                            title: "@lang('messages.alert.delete.purchase_order.title')",
-                            text: "@lang('messages.alert.delete.purchase_order.text')",
-                            type: "error",
-                            showCancelButton: true,
-                            confirmButtonClass: "btn-danger",
-                            confirmButtonText: "@lang('buttons.reject_button')",
-                            cancelButtonText: "@lang('buttons.cancel_button')",
-                            closeOnConfirm: false
-                        }, function (isConfirm) {
-                            if (isConfirm) form.submit();
-                        });
-                    }
+        var poApp = new Vue({
+            el: '#poVue',
+            methods: {
+                showAlert: function (event) {
+                    var buttonId = event.currentTarget.id;
+
+                    swal({
+                        title: "@lang('messages.alert.delete.purchase_order.title')",
+                        text: "@lang('messages.alert.delete.purchase_order.text')",
+                        type: "error",
+                        showCancelButton: true,
+                        confirmButtonClass: "btn-danger",
+                        confirmButtonText: "@lang('buttons.reject_button')",
+                        cancelButtonText: "@lang('buttons.cancel_button')",
+                        closeOnConfirm: false
+                    }, function (isConfirm) {
+                        if (isConfirm) $('#deleteForm').submit();
+                    });
                 }
-            });
+            }
         });
     </script>
 @endsection

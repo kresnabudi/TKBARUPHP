@@ -10,6 +10,7 @@ namespace App\Http\Controllers;
 
 use DB;
 use Auth;
+use Config;
 use Illuminate\Http\Request;
 
 use App\Model\Bank;
@@ -21,19 +22,21 @@ use App\Model\PhoneNumber;
 use App\Model\PhoneProvider;
 use App\Model\ExpenseTemplate;
 use App\Model\SupplierSetting;
-
 use App\Repos\LookupRepo;
+use Illuminate\Support\Facades\Log;
 
 class SupplierController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth', [
+            'except' => [ 'searchSuppliers' ]
+        ]);
     }
 
     public function index()
     {
-        $supplier = Supplier::paginate(10);
+        $supplier = Supplier::paginate(Config::get('const.PAGINATION'));
         return view('supplier.index', compact('supplier'));
     }
 
@@ -42,7 +45,7 @@ class SupplierController extends Controller
         $supplier = Supplier::with('profiles.phoneNumbers.provider', 'bankAccounts.bank',
             'expenseTemplates')->find($id);
 
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         $bankDDL = Bank::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
         $providerDDL = PhoneProvider::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
         $productList = Product::whereStatus('STATUS.ACTIVE')->get();
@@ -54,14 +57,15 @@ class SupplierController extends Controller
 
     public function create()
     {
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         $bankDDL = Bank::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
         $providerDDL = PhoneProvider::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
         $productList = Product::with('type')->where('status', '=', 'STATUS.ACTIVE')->get();
         $expenseTemplates = ExpenseTemplate::all();
+        $expenseTypes = LookupRepo::findByCategory('EXPENSETYPE')->pluck('i18nDescription', 'code');
 
         return view('supplier.create',
-            compact('bankDDL', 'statusDDL', 'providerDDL', 'productList', 'expenseTemplates'));
+            compact('bankDDL', 'statusDDL', 'providerDDL', 'productList', 'expenseTemplates', 'expenseTypes'));
     }
 
     public function store(Request $request)
@@ -126,7 +130,7 @@ class SupplierController extends Controller
             }
         });
 
-        return redirect(route('db.master.supplier'));
+        return response()->json();
     }
 
     public function edit($id)
@@ -134,16 +138,17 @@ class SupplierController extends Controller
         $supplier = Supplier::with('profiles.phoneNumbers.provider', 'bankAccounts.bank', 'products',
             'expenseTemplates')->find($id);
 
-        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('description', 'code');
+        $statusDDL = LookupRepo::findByCategory('STATUS')->pluck('i18nDescription', 'code');
         $bankDDL = Bank::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
         $providerDDL = PhoneProvider::whereStatus('STATUS.ACTIVE')->get(['name', 'short_name', 'id']);
         $productList = Product::with('type')->where('status', '=', 'STATUS.ACTIVE')->get();
         $productSelected = array_fill_keys($supplier->products()->pluck('products.id')->toArray(), true);
         $expenseTemplates = ExpenseTemplate::all();
+        $expenseTypes = LookupRepo::findByCategory('EXPENSETYPE')->pluck('i18nDescription', 'code');
 
         return view('supplier.edit',
             compact('supplier', 'bankDDL', 'statusDDL', 'providerDDL', 'productList', 'productSelected',
-                'expenseTemplates'));
+                'expenseTemplates', 'expenseTypes'));
     }
 
     public function update($id, Request $request)
@@ -242,7 +247,7 @@ class SupplierController extends Controller
             }
         });
 
-        return redirect(route('db.master.supplier'));
+        return response()->json();
     }
 
     public function delete($id)
@@ -266,5 +271,25 @@ class SupplierController extends Controller
         $supplier->delete();
 
         return redirect(route('db.master.supplier'));
+    }
+
+    public function searchSuppliers(Request $request)
+    {
+        Log::info("SupplierController@searchSuppliers");
+
+        $param = $request->query('q');
+
+        if(empty($param))
+            return collect([]);
+
+        $suppliers = Supplier::with('profiles.phoneNumbers.provider', 'expenseTemplates', 'bankAccounts.bank')
+            ->where('name', 'like', "%$param%")
+            ->orWhere('tax_id', 'like', "%$param%")
+            ->orWhereHas('profiles', function ($query) use ($param){
+                $query->where('first_name', 'like', "%$param%")
+                      ->orWhere('last_name', 'like', "%$param%");
+            })->get();
+
+        return $suppliers;
     }
 }

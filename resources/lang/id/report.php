@@ -60,11 +60,107 @@ return [
         'header' => [
             'title' => 'Monitoring',
         ],
+        'componens' => [
+            'po' => [
+                'page_title' => 'Pembelian',
+            ],
+            'so' => [
+                'page_title' => 'Penjualan',
+            ],
+        ],
+        'components' => [
+            'po' => [
+                'table' => [
+                    'header' => [
+                        'code' => 'Kode',
+                        'po_date' => 'Tanggal',
+                        'supplier' => 'Supplier',
+                        'shipping_date' => 'Tgl Kirim',
+                        'status' => 'Status',
+                    ],
+                    'item' => [
+                        'header' => [
+                            'product_name' => 'Produk',
+                            'unit' => 'Unit',
+                            'brutto' => 'Bruto',
+                            'netto' => 'Netto',
+                            'tare' => 'Tare',
+                        ],
+                    ],
+                ],
+            ],
+            'so' => [
+                'table' => [
+                    'header' => [
+                        'code' => 'Kode',
+                        'so_date' => 'Tanggal',
+                        'customer' => 'Pelanggan',
+                        'shipping_date' => 'Tgl Kirim',
+                        'status' => 'Status',
+                    ],
+                    'item' => [
+                        'header' => [
+                            'product_name' => 'Nama Produk',
+                            'unit' => 'Unit',
+                            'brutto' => 'Bruto',
+                        ],
+                    ],
+                ],
+            ],
+        ],
     ],
     'tax' => [
         'title' => 'Laporan Pajak',
-        'page_title' => '',
+        'page_title' => 'Pajak',
         'page_title_desc' => '',
+        'header' => [
+            'title' => 'Laporan Pajak',
+        ],
+        'nav_tabs' => [
+            'invoice_input' => 'Faktur Masukan',
+            'invoice_output_summary' => 'Faktur Keluaran Summary',
+            'invoice_output_detail' => 'Faktur Keluaran Detail',
+            'flow' => 'Arus',
+        ],
+        'input' => [
+            'table' => [
+                'header' => [
+                    'invoice_date' => 'Tanggal Faktur',
+                    'invoice_no' => 'No Faktur',
+                    'detail' => 'Uraian',
+                    'qty' => 'Satuan (kg)',
+                    'unit_price' => 'Harga Satuan',
+                    'tax_base' => 'DPP Beli (Rp)',
+                    'gst' => 'PPN-PM (Rp)',
+                    'grand_total' => 'Total yang dibayar (Rp)',
+                ],
+            ],
+        ],
+        'output_summary' => [
+            'table' => [
+                'header' => [
+                    'date' => 'Tanggal',
+                    'qty' => 'Satuan (kg)',
+                    'unit_price' => 'Harga Satuan',
+                    'tax_base' => 'DPP-Jual (Rp)',
+                    'gst' => 'PPN-PK (Rp)',
+                    'total_price' => 'Total (Rp)',
+                    'product' => 'Barang',
+                ],
+            ],
+        ],
+        'output' => [
+            'table' => [
+                'header' => [
+                    'date' => 'Tanggal',
+                    'name' => 'Nama',
+                    'address' => 'Alamat',
+                    'unit_price' => 'Harga',
+                    'qty' => 'Berat',
+                    'product' => 'Barang',
+                ],
+            ],
+        ],
     ],
     'transaction' => [
         'title' => 'Laporan Transaksi',
@@ -73,6 +169,8 @@ return [
         'header' => [
             'purchase_order' => 'Pembelian',
             'sales_order' => 'Penjualan',
+            'purchase_order_today_summary' => 'Rangkuman Pembelian Harian',
+            'sales_order_today_summary' => 'Rangkuman Penjualan Harian',
         ],
         'field' => [
             'po_code' => 'Kode',
@@ -261,6 +359,8 @@ return [
                 'tax_id' => 'No. NPWP',
                 'status' => 'Status',
                 'remarks' => 'Keterangan',
+                'product_name' => '',
+                'price' => '',
             ],
             'footer' => 'Dicetak oleh :user pada :date',
         ],
@@ -401,6 +501,43 @@ return [
                 'code' => 'Kode',
             ],
             'footer' => 'Dicetak oleh :user pada :date',
+        ],
+        'today_price' => [
+            'report_name' => 'Daftar Harga',
+            'header' => [
+                'product_type' => 'Tipe',
+                'product_name' => 'Nama',
+                'price' => 'Harga',
+            ],
+        ],
+        'po_summary' => [
+            'report_name' => 'Rangkuman Pembelian Harian',
+            'header' => [
+                'code' => 'Kode',
+                'po_date' => 'Tanggal',
+                'supplier' => 'Supplier',
+                'amount' => 'Jumlah',
+                'status' => 'Status',
+            ],
+        ],
+        'so_summary' => [
+            'report_name' => 'Rangkuman Penjualan Harian',
+            'header' => [
+                'code' => 'Kode',
+                'so_date' => 'Tanggal',
+                'customer' => 'Pelanggan',
+                'amount' => 'Jumlah',
+                'status' => 'Status',
+            ],
+        ],
+        'stock_list' => [
+            'report_name' => 'Daftar Stok',
+            'header' => [
+                'warehouse' => 'Gudang',
+                'product_type' => 'Tipe',
+                'product_name' => 'Produk',
+                'quantity' => 'Jumlah',
+            ],
         ],
     ],
     'viewer' => [

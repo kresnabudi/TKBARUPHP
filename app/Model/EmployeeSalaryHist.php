@@ -47,6 +47,12 @@ use Vinkla\Hashids\Facades\Hashids;
  * @method static \Illuminate\Database\Query\Builder|\App\Model\EmployeeSalaryHist whereUpdatedAt($value)
  * @method static \Illuminate\Database\Query\Builder|\App\Model\EmployeeSalaryHist whereDeletedAt($value)
  * @mixin \Eloquent
+ * @method static bool|null forceDelete()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\EmployeeSalaryHist onlyTrashed()
+ * @method static bool|null restore()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\EmployeeSalaryHist withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|\App\Model\EmployeeSalaryHist withoutTrashed()
+ * @property-read mixed $h_id
  */
 class EmployeeSalaryHist extends Model
 {
@@ -76,9 +82,18 @@ class EmployeeSalaryHist extends Model
         'deleted_at',
     ];
 
+    protected $appends = [
+        'hId',
+    ];
+
     public function hId()
     {
         return HashIds::encode($this->attributes['id']);
+    }
+
+    public function getHIdAttribute()
+    {
+        return $this->hId();
     }
 
     public static function boot()
